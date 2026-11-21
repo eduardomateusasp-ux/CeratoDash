@@ -14,6 +14,14 @@ object Prefs {
     fun adapter(c: Context): String? = sp(c).getString("addr", null)
     fun setAdapter(c: Context, addr: String) = sp(c).edit().putString("addr", addr).apply()
 
+    /** Nome mostrado do adaptador escolhido (pode ser nulo) e como falar com ele. */
+    fun adapterName(c: Context): String? = sp(c).getString("addrName", null)
+    fun setAdapterName(c: Context, name: String?) = sp(c).edit().putString("addrName", name).apply()
+
+    fun transport(c: Context): Transport =
+        Transport.values().getOrElse(sp(c).getInt("transport", 0)) { Transport.AUTO }
+    fun setTransport(c: Context, t: Transport) = sp(c).edit().putInt("transport", t.ordinal).apply()
+
     fun fuel(c: Context): Fuel = Fuel.values().getOrElse(sp(c).getInt("fuel", 0)) { Fuel.GASOLINA }
     fun setFuel(c: Context, f: Fuel) = sp(c).edit().putInt("fuel", f.ordinal).apply()
 

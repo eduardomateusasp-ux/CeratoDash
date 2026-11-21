@@ -166,7 +166,7 @@ object ObdManager {
                         null
                     }) ?: address
                     publish(s, ObdStatus(ConnState.CONECTANDO, name))
-                    val (link, ble) = openLink(app, device, s, preferBle)
+                    val (link, ble) = openLink(app, device, s, preferBle, Prefs.transport(app))
                     preferBle = ble
                     try {
                         val elm = Elm327(link.input, link.output)
@@ -197,20 +197,27 @@ object ObdManager {
     /** Tenta o Bluetooth clássico e, se falhar, o BLE (na ordem inversa se o BLE funcionou antes). */
     @SuppressLint("MissingPermission")
     private fun openLink(
-        app: Context, device: BluetoothDevice, s: Session, preferBle: Boolean
+        app: Context, device: BluetoothDevice, s: Session, preferBle: Boolean, transport: Transport
     ): Pair<ObdLink, Boolean> {
-        val order = if (preferBle) listOf(true, false) else listOf(false, true)
+        val order = linkOrder(transport, preferBle)
         val type = device.type
+        var last: IOException? = null
         for (ble in order) {
             if (s.closed) throw IOException("Conexão cancelada")
-            if (ble && type == BluetoothDevice.DEVICE_TYPE_CLASSIC) continue
-            if (!ble && type == BluetoothDevice.DEVICE_TYPE_LE) continue
+            // No modo automático, pula o tipo que o Android já sabe que o aparelho não suporta.
+            if (transport == Transport.AUTO) {
+                if (ble && type == BluetoothDevice.DEVICE_TYPE_CLASSIC) continue
+                if (!ble && type == BluetoothDevice.DEVICE_TYPE_LE) continue
+            }
             try {
                 return (if (ble) openBle(app, device, s) else openClassic(device, s)) to ble
             } catch (e: IOException) {
+                last = e
                 if (s.closed) throw IOException("Conexão cancelada")
             }
         }
+        // Com um modo só escolhido, mostra o motivo real (por exemplo, o código do erro BLE).
+        if (transport != Transport.AUTO && last?.message != null) throw IOException(last.message)
         throw IOException("Não consegui conectar ao adaptador. Ele está ligado na tomada e sem outro aparelho conectado?")
     }
 

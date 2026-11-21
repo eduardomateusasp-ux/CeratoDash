@@ -9,7 +9,7 @@ Este roteiro é para você fazer dentro do carro. Preencha as colunas "Resultado
 ## 0. Preparação
 | Item | Resultado | Anotações |
 |---|---|---|
-| APK instalado na central (confira a versão 0.7.0 em Configurações, Apps) | | |
+| APK instalado na central (confira a versão 0.8.0 em Configurações, Apps) | | |
 | Adaptador ELM327 ligado na porta OBD e pareado no Bluetooth da central | | |
 | Car Scanner fechado no celular, e Bluetooth do celular desligado (o adaptador só aceita um aparelho) | | |
 | Ignição ligada, motor ainda desligado | | |
@@ -18,7 +18,10 @@ Este roteiro é para você fazer dentro do carro. Preencha as colunas "Resultado
 | Passo | Esperado | Resultado | Anotações |
 |---|---|---|---|
 | Abrir o app | Tela do Painel, status "Desconectado: abra Ajustes e escolha o adaptador" | | |
-| Ajustes, Escolher adaptador | Lista os aparelhos pareados | | |
+| Adaptador clássico: Ajustes, Escolher entre pareados | Lista os aparelhos pareados | | |
+| Adaptador BLE: Ajustes, Buscar adaptador (BLE), aceitar a localização | Seu adaptador aparece na lista (com nome e sinal) | | |
+| Se a busca não achar: Digitar endereço, escolher Bluetooth LE | Conecta pelo endereço | | |
+| Se aparecer erro de conexão, anote a mensagem inteira (código ou serviços) | | | |
 | Escolher o OBDII | Status muda para "Conectando" e depois "Conectado" | | |
 | Tempo até "Conectado" (cronometre, com a ignição ligada) | Até 15 s | ___ s | |
 | Notificação do app aparece na central | Discreta, com botão Parar | | |

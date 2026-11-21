@@ -3,7 +3,9 @@ package br.com.ceratodash.ui
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -34,6 +36,7 @@ import br.com.ceratodash.data.TripLive
 import br.com.ceratodash.obd.ConnState
 import br.com.ceratodash.obd.ObdManager
 import br.com.ceratodash.obd.ObdStatus
+import br.com.ceratodash.obd.Transport
 import br.com.ceratodash.service.ObdService
 import br.com.ceratodash.service.Speaker
 import kotlinx.coroutines.launch
@@ -79,6 +82,16 @@ class MainActivity : AppCompatActivity() {
 
     private val match = LinearLayout.LayoutParams.MATCH_PARENT
     private val wrap = LinearLayout.LayoutParams.WRAP_CONTENT
+
+    private lateinit var search: AdapterSearch
+
+    private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            startSearch()
+        } else {
+            toast("Sem a permissão de localização a busca BLE não funciona. Use Digitar endereço.")
+        }
+    }
 
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -192,6 +205,7 @@ class MainActivity : AppCompatActivity() {
         coachScreen = CoachScreen(this)
         trips = TripsScreen(this)
         hotspotPanel = HotspotPanel(this)
+        search = AdapterSearch(this) { address, name, transport -> adapterChosen(address, name, transport) }
         dash.onHotspot = { hotspotPanel.show(it, ObdManager.telemetry.value, limits) }
         settings = SettingsScreen(
             this,
@@ -203,7 +217,9 @@ class MainActivity : AppCompatActivity() {
             { launchPhotoPicker() },
             { applyPrefs() },
             { testVoice() },
-            { toggleOverlay() }
+            { toggleOverlay() },
+            { searchAdapter() },
+            { search.openManual() }
         )
         screens.add(dash)
         screens.add(telemetry)
@@ -240,6 +256,40 @@ class MainActivity : AppCompatActivity() {
         }
         Speaker.speak("Voz do CeratoDash funcionando.")
         if (!Speaker.ready) toast("Preparando a voz. Se não falar, toque em Testar voz de novo.")
+    }
+
+    /** Escolheu um adaptador (da busca BLE ou do endereço digitado): guarda e conecta. */
+    private fun adapterChosen(address: String, name: String?, transport: Transport) {
+        Prefs.setAdapter(this, address)
+        Prefs.setAdapterName(this, name)
+        Prefs.setTransport(this, transport)
+        ObdService.start(this)
+        settings.refresh()
+        toast("Adaptador escolhido. Conectando por ${transport.label}...")
+    }
+
+    /** Confere Bluetooth LE, Bluetooth ligado e permissão de localização, e abre a busca. */
+    private fun searchAdapter() {
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            toast("Esta central não tem Bluetooth LE, então não consegue falar com adaptadores só BLE.")
+            return
+        }
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+        if (adapter == null || !adapter.isEnabled) {
+            toast("Ligue o Bluetooth da central.")
+            return
+        }
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            return
+        }
+        startSearch()
+    }
+
+    private fun startSearch() {
+        // Libera o adaptador: um adaptador BLE conectado ao app não aparece na busca.
+        ObdService.stop(this)
+        search.open()
     }
 
     /** Liga ou desliga a faixa sobre o mapa. Sem a permissão de sobreposição, tenta abrir a tela dela; se a central não tiver, avisa e não força. */
@@ -337,6 +387,8 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Escolha o adaptador OBDII")
             .setItems(names) { _, i ->
                 Prefs.setAdapter(this, devices[i].address)
+                Prefs.setAdapterName(this, devices[i].name)
+                Prefs.setTransport(this, Transport.AUTO)
                 ObdService.start(this)
                 settings.refresh()
             }

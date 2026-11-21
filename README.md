@@ -2,7 +2,7 @@
 
 Painel de telemetria OBDII para a central multimídia Android do Kia Cerato 2010/2011 SX2 1.6 automático. Lê o carro por um adaptador ELM327 Bluetooth e mostra rotação, velocidade, temperaturas, bateria, carga, borboleta e consumo estimado, com gráficos, diagnóstico, viagens e um treinador de condução. Funciona 100% sem internet.
 
-**Estado: versão 0.7.0, ainda não testada no carro.** Os testes automáticos (103) rodam com um adaptador simulado. Veja `docs/PRD.md` para o que está feito e o que falta, e `docs/testes-no-carro.md` para o roteiro de testes que você vai fazer.
+**Estado: versão 0.8.0, ainda não testada no carro.** Os testes automáticos (103) rodam com um adaptador simulado. Veja `docs/PRD.md` para o que está feito e o que falta, e `docs/testes-no-carro.md` para o roteiro de testes que você vai fazer.
 
 ## Telas
 Painel, Telemetria, Condução, Diagnóstico, Viagens, Mapas e Ajustes, numa barra lateral. Alertas visuais no topo (com voz opcional), dicas de condução e foto do carro com pontos interativos (motor, bateria e escapamento).
@@ -30,10 +30,22 @@ Sem configuração, o APK sai assinado com a chave de debug, o que basta para in
 2. No gerenciador de arquivos da central, toque no APK e instale. Se pedir, permita instalar de fontes desconhecidas.
 3. Se já havia uma versão instalada com outra assinatura, desinstale antes.
 
-## Como parear e escolher o adaptador
+## Como escolher o adaptador
+
+### Adaptador Bluetooth LE (BLE), o caso mais comum nos adaptadores novos
+Adaptadores só BLE **não aparecem** na lista de pareados do Bluetooth da central, então não adianta tentar parear por lá. Use a busca do próprio app:
+1. O adaptador só aceita um aparelho: desligue o Bluetooth do celular e feche o Car Scanner.
+2. Ligue o adaptador no carro, com a ignição ligada.
+3. No CeratoDash: Ajustes, Buscar adaptador (BLE). Aceite a permissão de localização (o Android exige para varrer BLE; o app não usa GPS).
+4. Toque no seu adaptador na lista. O app guarda que ele é BLE e conecta.
+5. Se a busca não achar nada, use Digitar endereço: escreva o endereço do adaptador (AA:BB:CC:DD:EE:FF), que aparece nas informações do aparelho Bluetooth no celular, e escolha Bluetooth LE.
+
+Se aparecer `Esta central não tem Bluetooth LE`, a central só tem Bluetooth clássico e não consegue falar com esse adaptador. Nesse caso é preciso um adaptador ELM327 Bluetooth clássico.
+
+### Adaptador Bluetooth clássico
 1. No Bluetooth da central, pareie o adaptador OBDII (normalmente aparece como "OBDII" ou "OBD2"; a senha costuma ser 1234 ou 0000).
 2. O adaptador só aceita um aparelho por vez. Feche o Car Scanner e desligue o Bluetooth do celular.
-3. Abra o CeratoDash, vá em Ajustes, Escolher adaptador, e toque no adaptador.
+3. Abra o CeratoDash, vá em Ajustes, Escolher entre pareados, e toque no adaptador.
 4. Com a ignição ligada (ou o motor ligado), o status muda para Conectado e o painel começa a mostrar os dados. Se o carro não responder a um sensor, o painel mostra "--".
 
 ## Como trocar a foto do carro
@@ -55,7 +67,7 @@ Em Ajustes, Mapas: ligue a faixa para ver rotação, velocidade e água sobre o 
 - A distância das viagens vem da velocidade do OBD (sem GPS), então tem pequena imprecisão.
 - A descrição dos códigos de falha existe só para cerca de 85 códigos genéricos P0xxx (SAE J2012, tradução própria). Códigos do fabricante aparecem sem descrição.
 - Os limites do treinador de condução são valores gerais de direção econômica, não uma especificação da Kia, e precisam de calibração. Sem GPS, o limite de velocidade é o que você configura.
-- BLE só funciona com adaptador já pareado (não há varredura).
+- BLE: a busca e a conexão nunca foram testadas num adaptador real. Se falhar, a mensagem traz o código do erro ou a lista de serviços do adaptador; me envie.
 - O app usa só km/h, °C e km/L, de propósito.
 - O Google Maps funciona offline se você baixar as áreas antes. O Waze precisa de internet. O app não embute mapa (veja `docs/avaliacao-mapa-offline.md`).
 - O vermelho de perigo tem contraste de 5,2:1, abaixo da meta de 7:1 (`docs/design-system.md`).

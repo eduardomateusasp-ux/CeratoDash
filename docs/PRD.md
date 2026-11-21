@@ -1,6 +1,6 @@
 # CeratoDash: requisitos do produto (PRD)
 
-Versão do app: 0.7.0. Atualizado em 21/11/2026.
+Versão do app: 0.8.0. Atualizado em 21/11/2026.
 
 **Regra de leitura:** "Feito" quer dizer implementado e, quando possível, coberto por testes automáticos com um ELM327 simulado. **Nada foi testado no carro ainda.** Tudo que depende do Bluetooth real, da central ou do carro está marcado como não testado.
 
@@ -18,11 +18,11 @@ Painel de telemetria OBDII, esportivo e interativo, para a central multimídia A
 ### 2.1 Conexão OBDII
 | Requisito | Estado | Observação |
 |---|---|---|
-| Escolher o adaptador entre os pareados e guardar | Feito | Não testado no carro |
+| Escolher o adaptador (entre os pareados, por busca BLE ou por endereço) e guardar | Feito | Não testado no carro |
 | Inicializar o ELM327 (ATZ, ATE0, ATL0, ATS0, ATH0, ATSP0) e descobrir os PIDs | Feito | Testado só com adaptador simulado |
 | Reconexão automática, status sempre visível, mensagens claras | Feito | Tenta de novo a cada 3 s. Não testado no carro |
 | Tolerar quedas; tratar NO DATA, UNABLE TO CONNECT, SEARCHING, BUS INIT e várias ECUs | Feito | Também CAN ERROR, BUS BUSY, LV RESET e STOPPED. Testado só em simulação |
-| Bluetooth clássico (SPP) e, de reserva, BLE | Feito | BLE só funciona com adaptador pareado (sem varredura) e nunca foi testado |
+| Bluetooth clássico (SPP) e BLE | Feito | BLE com busca dentro do app, ou endereço digitado, sem exigir pareamento. Nunca testado em adaptador real. Depende de a central ter Bluetooth LE |
 | Serviço em primeiro plano, com notificação discreta | Feito | Não testado na central |
 | Iniciar com o sistema (BOOT_COMPLETED), opção desligada por padrão | Feito | Só o serviço sobe; a tela precisa ser aberta. Não testado |
 

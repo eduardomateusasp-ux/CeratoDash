@@ -24,7 +24,9 @@ class SettingsScreen(
     /** Estilo de condução, limite de velocidade ou foto mudaram: a tela principal precisa reaplicar. */
     private val onPrefsChanged: () -> Unit,
     private val onTestVoice: () -> Unit,
-    private val onToggleOverlay: () -> Unit
+    private val onToggleOverlay: () -> Unit,
+    private val onSearchAdapter: () -> Unit,
+    private val onManualAddress: () -> Unit
 ) : ScrollView(activity) {
 
     private val box = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -62,7 +64,8 @@ class SettingsScreen(
         } catch (e: Exception) {
             null
         }
-        return "${name ?: "Adaptador"}  ($addr)"
+        val nome = Prefs.adapterName(activity) ?: name ?: "Adaptador"
+        return "$nome  ($addr), ${Prefs.transport(activity).label}"
     }
 
     /** Refaz a tela com os valores atuais. */
@@ -75,7 +78,13 @@ class SettingsScreen(
         adapter.addView(activity.label(adapterName(), Theme.TEXT_SIZE, Theme.TEXT))
         adapter.addView(
             row(
-                activity.bigButton("Escolher adaptador") { onPickAdapter() },
+                activity.bigButton("Buscar adaptador (BLE)") { onSearchAdapter() },
+                activity.bigButton("Digitar endereço") { onManualAddress() },
+                activity.bigButton("Escolher entre pareados") { onPickAdapter() }
+            )
+        )
+        adapter.addView(
+            row(
                 activity.bigButton("Reconectar") { reconnect() },
                 activity.bigButton("Desconectar") { ObdService.stop(activity) }
             )
