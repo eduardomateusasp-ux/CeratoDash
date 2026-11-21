@@ -24,7 +24,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var dash: DashboardView
     private lateinit var statusText: TextView
     private lateinit var statusDot: View
-    private val prefs by lazy { getSharedPreferences("ceratodash", MODE_PRIVATE) }
 
     private val match = LinearLayout.LayoutParams.MATCH_PARENT
     private val wrap = LinearLayout.LayoutParams.WRAP_CONTENT
@@ -32,7 +31,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        ObdManager.fuel = Fuel.values().getOrElse(prefs.getInt("fuel", 0)) { Fuel.GASOLINA }
+        ObdManager.fuel = Prefs.fuel(this)
         setContentView(buildUi())
 
         lifecycleScope.launch {
@@ -41,7 +40,15 @@ class MainActivity : AppCompatActivity() {
                 launch { ObdManager.status.collect { renderStatus(it) } }
             }
         }
-        if (!ObdManager.isRunning) connectSaved()
+        // O serviço é o dono da conexão. Se ele ainda não está rodando, inicia.
+        if (!ObdManager.isRunning) {
+            if (Prefs.adapter(this) == null) {
+                ObdManager.status.value =
+                    ObdStatus(ConnState.DESCONECTADO, "toque em Ajustes e escolha o adaptador")
+            } else {
+                ObdService.start(this)
+            }
+        }
     }
 
     private fun buildUi(): View {
@@ -95,21 +102,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderStatus(s: ObdStatus) {
-        val (label, color) = when (s.state) {
-            ConnState.CONECTADO -> "Conectado" to DashboardView.OK
-            ConnState.CONECTANDO -> "Conectando" to DashboardView.WARN
-            ConnState.INICIALIZANDO -> "Iniciando o adaptador" to DashboardView.WARN
-            ConnState.ERRO -> "Sem conexão" to DashboardView.DANGER
-            ConnState.DESCONECTADO -> "Desconectado" to DashboardView.MUTED
+        val color = when (s.state) {
+            ConnState.CONECTADO -> DashboardView.OK
+            ConnState.CONECTANDO, ConnState.INICIALIZANDO -> DashboardView.WARN
+            ConnState.ERRO -> DashboardView.DANGER
+            ConnState.DESCONECTADO -> DashboardView.MUTED
         }
         (statusDot.background as GradientDrawable).setColor(color)
-        statusText.text = if (s.message.isBlank()) label else "$label: ${s.message}"
+        statusText.text = if (s.message.isBlank()) s.state.label else "${s.state.label}: ${s.message}"
     }
 
     private fun showSettings() {
+        val auto = if (Prefs.autostart(this)) "ligado" else "desligado"
         val items = arrayOf(
             "Escolher adaptador OBDII",
             "Combustível: ${ObdManager.fuel.label} (tocar para alternar)",
+            "Iniciar com o sistema: $auto (tocar para alternar)",
             "Reconectar",
             "Desconectar"
         )
@@ -119,8 +127,9 @@ class MainActivity : AppCompatActivity() {
                 when (i) {
                     0 -> pickAdapter()
                     1 -> toggleFuel()
-                    2 -> connectSaved()
-                    3 -> ObdManager.stop()
+                    2 -> toggleAutostart()
+                    3 -> reconnect()
+                    4 -> ObdService.stop(this)
                 }
             }
             .show()
@@ -129,8 +138,18 @@ class MainActivity : AppCompatActivity() {
     private fun toggleFuel() {
         val next = if (ObdManager.fuel == Fuel.GASOLINA) Fuel.ETANOL else Fuel.GASOLINA
         ObdManager.fuel = next
-        prefs.edit().putInt("fuel", next.ordinal).apply()
+        Prefs.setFuel(this, next)
         toast("Combustível: ${next.label}")
+    }
+
+    private fun toggleAutostart() {
+        val on = !Prefs.autostart(this)
+        Prefs.setAutostart(this, on)
+        toast(if (on) "A leitura vai iniciar junto com a central." else "Início com o sistema desligado.")
+    }
+
+    private fun reconnect() {
+        if (Prefs.adapter(this) == null) toast("Escolha o adaptador primeiro.") else ObdService.start(this)
     }
 
     @SuppressLint("MissingPermission")
@@ -163,29 +182,10 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Escolha o adaptador OBDII")
             .setItems(names) { _, i ->
-                prefs.edit().putString("addr", devices[i].address).apply()
-                ObdManager.start(devices[i])
+                Prefs.setAdapter(this, devices[i].address)
+                ObdService.start(this)
             }
             .show()
-    }
-
-    private fun connectSaved() {
-        val addr = prefs.getString("addr", null)
-        if (addr == null) {
-            ObdManager.status.value = ObdStatus(ConnState.DESCONECTADO, "toque em Ajustes e escolha o adaptador")
-            return
-        }
-        val paired = bonded()
-        if (paired == null) {
-            ObdManager.status.value = ObdStatus(ConnState.ERRO, "Bluetooth desligado ou indisponível")
-            return
-        }
-        val device = paired.firstOrNull { it.address == addr }
-        if (device == null) {
-            ObdManager.status.value = ObdStatus(ConnState.ERRO, "o adaptador salvo não está pareado")
-            return
-        }
-        ObdManager.start(device)
     }
 
     private fun openApp(pkg: String, nome: String) {

@@ -86,6 +86,78 @@ class Elm327Test {
     }
 
     @Test
+    fun traduzMensagensDeErroDoElm() {
+        assertTrue(Elm327.explain("UNABLE TO CONNECT")!!.contains("ECU"))
+        assertTrue(Elm327.explain("SEARCHING...\nBUS INIT: ...ERROR\nUNABLE TO CONNECT")!!.contains("iniciar a comunicação"))
+        assertTrue(Elm327.explain("CAN ERROR")!!.contains("CAN"))
+        assertTrue(Elm327.explain("BUS BUSY")!!.contains("ocupado"))
+        assertTrue(Elm327.explain("LV RESET")!!.contains("tensão baixa"))
+        assertTrue(Elm327.explain("NO DATA")!!.contains("não respondeu"))
+        assertNull(Elm327.explain("41 0C 1A F8"))
+    }
+
+    @Test
+    fun aceitaDadoColadoAoSearching() {
+        val elm = FakeElm { "SEARCHING...41 0C 1A F8" }.elm()
+        assertEquals(1726f, elm.query(Pids.byCode("0C")!!)!!, 0.001f)
+    }
+
+    @Test
+    fun aceitaDadoDepoisDeBusInitOk() {
+        val elm = FakeElm { "BUS INIT: OK\r41 0D 3C" }.elm()
+        assertEquals(60f, elm.query(Pids.byCode("0D")!!)!!, 0.001f)
+    }
+
+    @Test
+    fun semDadoGuardaOMotivo() {
+        val elm = FakeElm { "NO DATA" }.elm()
+        assertNull(elm.query(Pids.byCode("0C")!!))
+        assertNotNull(elm.lastProblem)
+        // uma resposta boa limpa o motivo
+        val ok = FakeElm { "41 0D 3C" }.elm()
+        ok.query(Pids.byCode("0D")!!)
+        assertNull(ok.lastProblem)
+    }
+
+    @Test
+    fun reinicioDoAdaptadorDuranteALeituraGeraErro() {
+        val elm = FakeElm { "LV RESET" }.elm()
+        try {
+            elm.query(Pids.byCode("0C")!!)
+            fail("deveria lançar IOException")
+        } catch (e: IOException) {
+            assertTrue(e.message!!.contains("tensão baixa"))
+        }
+    }
+
+    @Test
+    fun falhaDeBusInitDaMensagemClara() {
+        val fake = FakeElm { cmd ->
+            if (cmd == "0100") "SEARCHING...\rBUS INIT: ...ERROR\rUNABLE TO CONNECT" else "OK"
+        }
+        try {
+            fake.elm().initialize()
+            fail("deveria lançar IOException")
+        } catch (e: IOException) {
+            assertTrue(e.message!!.contains("iniciar a comunicação"))
+        }
+    }
+
+    @Test
+    fun tentaDeNovoQuandoABuscaInicialFoiInterrompida() {
+        var tentativas = 0
+        val fake = FakeElm { cmd ->
+            when (cmd) {
+                "0100" -> if (tentativas++ == 0) "STOPPED" else "41 00 80 00 00 00"
+                else -> "OK"
+            }
+        }
+        val suportados = fake.elm().initialize()
+        assertTrue("01" in suportados)
+        assertEquals(2, fake.comandos.count { it == "0100" })
+    }
+
+    @Test
     fun adaptadorMudoGeraErroDeTempoEsgotado() {
         val mudo = FakeElm { "" }
         // Resposta vazia ainda traz o prompt; para simular silêncio, usamos streams sem dados.

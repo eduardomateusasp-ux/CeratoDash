@@ -20,7 +20,13 @@ data class Telemetry(
     val kmPerLiter: Float? = null
 )
 
-enum class ConnState { DESCONECTADO, CONECTANDO, INICIALIZANDO, CONECTADO, ERRO }
+enum class ConnState(val label: String) {
+    DESCONECTADO("Desconectado"),
+    CONECTANDO("Conectando"),
+    INICIALIZANDO("Iniciando o adaptador"),
+    CONECTADO("Conectado"),
+    ERRO("Sem conexão")
+}
 
 data class ObdStatus(
     val state: ConnState = ConnState.DESCONECTADO,
