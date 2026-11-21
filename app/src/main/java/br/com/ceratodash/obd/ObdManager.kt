@@ -1,16 +1,25 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
+
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import java.io.IOException
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
@@ -49,6 +58,63 @@ object ObdManager {
 
     val isRunning: Boolean get() = job?.isActive == true
 
+    // Comandos pedidos pela interface (diagnóstico). Quem fala com o adaptador é só o laço de
+    // leitura, que os executa entre um ciclo e outro, para as duas conversas não se misturarem.
+    private class Task(val run: (Elm327) -> Any?) {
+        val result = CompletableDeferred<Any?>()
+        @Volatile var cancelled = false
+    }
+
+    private val tasks = Channel<Task>(Channel.UNLIMITED)
+
+    @Volatile
+    private var ready = false
+
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun <T> withElm(block: (Elm327) -> T): T {
+        if (!ready) throw IOException("Sem conexão com o carro. Aguarde conectar.")
+        val task = Task(block)
+        tasks.send(task)
+        try {
+            return withTimeout(25000) { task.result.await() } as T
+        } catch (e: TimeoutCancellationException) {
+            throw IOException("O carro demorou demais para responder.")
+        } finally {
+            // Se a espera acabou antes da execução, o comando não pode rodar depois (ex.: limpar códigos).
+            if (!task.result.isCompleted) task.cancelled = true
+        }
+    }
+
+    private fun drainTasks(elm: Elm327?, error: String?) {
+        while (true) {
+            val task = tasks.tryReceive().getOrNull() ?: break
+            if (task.cancelled) continue
+            if (elm == null) {
+                task.result.completeExceptionally(IOException(error ?: "Sem conexão com o carro."))
+                continue
+            }
+            try {
+                task.result.complete(task.run(elm))
+            } catch (e: IOException) {
+                task.result.completeExceptionally(e)
+                throw e
+            } catch (e: Exception) {
+                task.result.completeExceptionally(e)
+            }
+        }
+    }
+
+    /** Lê a luz de injeção e os códigos de falha armazenados. */
+    suspend fun readDiagnostics(): DiagResult = withElm { elm ->
+        val mil = elm.milStatus()
+        DiagResult(mil?.first, mil?.second, elm.readDtcs())
+    }
+
+    /** Apaga os códigos de falha (modo 04). Chame só depois da confirmação do usuário. */
+    suspend fun clearDiagnostics() {
+        withElm { it.clearDtcs() }
+    }
+
     @Synchronized
     fun start(context: Context, address: String) {
         stopSession()
@@ -61,6 +127,8 @@ object ObdManager {
     @Synchronized
     fun stop() {
         stopSession()
+        ready = false
+        drainTasks(null, "Desconectado.")
         telemetry.value = Telemetry()
         status.value = ObdStatus(ConnState.DESCONECTADO, "")
     }
@@ -105,8 +173,11 @@ object ObdManager {
                         publish(s, ObdStatus(ConnState.INICIALIZANDO, name))
                         val supported = elm.initialize()
                         publish(s, ObdStatus(ConnState.CONECTADO, name))
+                        ready = true
                         poll(elm, supported, s)
                     } finally {
+                        ready = false
+                        drainTasks(null, "A conexão com o carro caiu.")
                         link.close()
                         if (s.link === link) s.link = null
                     }
@@ -193,6 +264,7 @@ object ObdManager {
         val adapterVoltage = "42" !in supported
 
         while (!s.closed) {
+            drainTasks(elm, null)
             var got = false
             val batch = if (slow.isEmpty()) fast else fast + slow[idx++ % slow.size]
             for (p in batch) {

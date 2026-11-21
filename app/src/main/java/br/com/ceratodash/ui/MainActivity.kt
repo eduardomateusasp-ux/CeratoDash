@@ -1,4 +1,4 @@
-package br.com.ceratodash
+package br.com.ceratodash.ui
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -8,7 +8,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -17,13 +17,34 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import br.com.ceratodash.data.Prefs
+import br.com.ceratodash.data.TripLive
+import br.com.ceratodash.obd.ConnState
+import br.com.ceratodash.obd.Fuel
+import br.com.ceratodash.obd.ObdManager
+import br.com.ceratodash.obd.ObdStatus
+import br.com.ceratodash.service.ObdService
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
+    private companion object {
+        const val PAINEL = 0
+        const val TELEMETRIA = 1
+        const val DIAGNOSTICO = 2
+        const val VIAGENS = 3
+        const val MAPAS = 4
+        const val AJUSTES = 5
+    }
+
     private lateinit var dash: DashboardView
+    private lateinit var telemetry: TelemetryScreen
+    private lateinit var trips: TripsScreen
     private lateinit var statusText: TextView
     private lateinit var statusDot: View
+    private val screens = ArrayList<View>()
+    private val railItems = ArrayList<TextView>()
+    private var current = PAINEL
 
     private val match = LinearLayout.LayoutParams.MATCH_PARENT
     private val wrap = LinearLayout.LayoutParams.WRAP_CONTENT
@@ -33,11 +54,19 @@ class MainActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         ObdManager.fuel = Prefs.fuel(this)
         setContentView(buildUi())
+        show(PAINEL)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { ObdManager.telemetry.collect { dash.update(it) } }
+                launch {
+                    ObdManager.telemetry.collect {
+                        dash.update(it)
+                        if (current == TELEMETRIA) telemetry.refresh()
+                    }
+                }
                 launch { ObdManager.status.collect { renderStatus(it) } }
+                launch { TripLive.current.collect { trips.setLive(it) } }
+                launch { TripLive.version.collect { trips.reload() } }
             }
         }
         // O serviço é o dono da conexão. Se ele ainda não está rodando, inicia.
@@ -53,13 +82,35 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildUi(): View {
         val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+            orientation = LinearLayout.HORIZONTAL
             setBackgroundColor(DashboardView.BG)
         }
+
+        // Navegação lateral
+        val rail = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(DashboardView.SURFACE)
+        }
+        val names = listOf("Painel", "Telemetria", "Diagnóstico", "Viagens", "Mapas", "Ajustes")
+        for ((i, n) in names.withIndex()) {
+            val item = TextView(this).apply {
+                text = n
+                textSize = 14f
+                gravity = Gravity.CENTER
+                minHeight = dp(64)
+                setOnClickListener { if (i == AJUSTES) showSettings() else show(i) }
+            }
+            railItems.add(item)
+            rail.addView(item, LinearLayout.LayoutParams(dp(104), 0, 1f))
+        }
+        root.addView(rail, LinearLayout.LayoutParams(wrap, match))
+
+        // Conteúdo: barra de status em cima e a tela escolhida embaixo
+        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(8), dp(16), dp(8))
+            setPadding(dp(24), dp(8), dp(24), dp(8))
         }
         statusDot = View(this).apply { background = dot(DashboardView.MUTED) }
         bar.addView(statusDot, LinearLayout.LayoutParams(dp(12), dp(12)).apply { rightMargin = dp(10) })
@@ -68,37 +119,38 @@ class MainActivity : AppCompatActivity() {
             textSize = 16f
         }
         bar.addView(statusText, LinearLayout.LayoutParams(0, wrap, 1f))
-        bar.addView(button("Ajustes") { showSettings() })
-        bar.addView(button("Google Maps") { openApp("com.google.android.apps.maps", "Google Maps") })
-        bar.addView(button("Waze") { openApp("com.waze", "Waze") })
-        root.addView(bar, LinearLayout.LayoutParams(match, wrap))
+        content.addView(bar, LinearLayout.LayoutParams(match, wrap))
 
+        val frame = FrameLayout(this)
         dash = DashboardView(this)
-        root.addView(dash, LinearLayout.LayoutParams(match, 0, 1f))
+        telemetry = TelemetryScreen(this)
+        trips = TripsScreen(this)
+        screens.add(dash)
+        screens.add(telemetry)
+        screens.add(DiagnosticScreen(this))
+        screens.add(trips)
+        screens.add(MapsScreen(this) { pkg, nome -> openApp(pkg, nome) })
+        for (s in screens) frame.addView(s, FrameLayout.LayoutParams(match, match))
+        content.addView(frame, LinearLayout.LayoutParams(match, 0, 1f))
+        root.addView(content, LinearLayout.LayoutParams(0, match, 1f))
         return root
     }
 
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+    private fun show(index: Int) {
+        current = index
+        for ((i, s) in screens.withIndex()) s.visibility = if (i == index) View.VISIBLE else View.GONE
+        for ((i, item) in railItems.withIndex()) {
+            val on = i == index
+            item.setTextColor(if (on) DashboardView.INFO else DashboardView.MUTED)
+            item.setBackgroundColor(if (on) DashboardView.HIGH else DashboardView.SURFACE)
+        }
+        if (index == TELEMETRIA) telemetry.refresh()
+        if (index == VIAGENS) trips.reload()
+    }
 
     private fun dot(color: Int) = GradientDrawable().apply {
         shape = GradientDrawable.OVAL
         setColor(color)
-    }
-
-    private fun button(label: String, onClick: () -> Unit): Button = Button(this).apply {
-        text = label
-        isAllCaps = false
-        setTextColor(DashboardView.TEXT)
-        textSize = 14f
-        background = GradientDrawable().apply {
-            cornerRadius = dp(12).toFloat()
-            setColor(DashboardView.HIGH)
-        }
-        setPadding(dp(18), dp(8), dp(18), dp(8))
-        minHeight = 0
-        minimumHeight = 0
-        setOnClickListener { onClick() }
-        layoutParams = LinearLayout.LayoutParams(wrap, dp(44)).apply { leftMargin = dp(8) }
     }
 
     private fun renderStatus(s: ObdStatus) {

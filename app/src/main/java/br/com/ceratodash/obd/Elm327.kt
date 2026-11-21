@@ -1,4 +1,9 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
+
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 import java.io.IOException
 import java.io.InputStream
@@ -19,6 +24,42 @@ class Elm327(private val input: InputStream, private val output: OutputStream) {
          * Traduz mensagens de erro do ELM327 (lista do manual do ELM327, "Messages and alerts").
          * Devolve null se a resposta não contém erro conhecido.
          */
+        private val quadroMulti = Regex("^[0-9A-F]:")
+
+        private fun limpar(resp: String): List<String> =
+            resp.split('\n').map { it.replace(" ", "").replaceFirst(ruido, "") }.filter { it.isNotEmpty() }
+
+        /** Há uma linha de resposta positiva do modo (ex.: "43" no modo 03) ou um quadro múltiplo CAN? */
+        fun temRespostaPositiva(resp: String, modo: String): Boolean =
+            limpar(resp).any { it.startsWith(modo) || quadroMulti.containsMatchIn(it) }
+
+        /**
+         * Lê os códigos DTC de uma resposta do modo 03. Cada código usa 2 bytes: os 2 bits de cima
+         * dão a letra (P, C, B, U), os 2 seguintes o primeiro dígito, e o resto 3 dígitos hex
+         * (SAE J2012). Em CAN o primeiro byte depois do 43 é a contagem e é descartado.
+         * Respostas de várias ECUs são juntadas sem repetir códigos.
+         */
+        fun parseDtcs(resp: String, can: Boolean): List<String> {
+            val linhas = limpar(resp)
+            val multi = linhas.filter { quadroMulti.containsMatchIn(it) }
+            val fluxos = if (multi.isNotEmpty()) listOf(multi.joinToString("") { it.substring(2) })
+            else linhas.filter { it.startsWith("43") }
+            val out = LinkedHashSet<String>()
+            for (f in fluxos) {
+                if (!f.startsWith("43")) continue
+                var hex = f.substring(2)
+                if (can) hex = hex.drop(2)
+                var i = 0
+                while (i + 4 <= hex.length) {
+                    val v = hex.substring(i, i + 4).toIntOrNull(16)
+                    i += 4
+                    if (v == null || v == 0) continue
+                    out.add("${"PCBU"[(v shr 14) and 3]}${(v shr 12) and 3}${"%03X".format(v and 0xFFF)}")
+                }
+            }
+            return out.toList()
+        }
+
         fun explain(resp: String): String? {
             val u = resp.uppercase()
             return when {
@@ -119,6 +160,36 @@ class Elm327(private val input: InputStream, private val output: OutputStream) {
         }
         lastProblem = null
         return p.decode(data)
+    }
+
+    /** Verdadeiro se o protocolo em uso é CAN (6 a 9 no ATDPN). Nesse caso a resposta do modo 03 traz byte de contagem. */
+    fun isCan(): Boolean {
+        val p = send("ATDPN").lines().firstOrNull()?.removePrefix("A") ?: return false
+        return p.firstOrNull() in '6'..'9'
+    }
+
+    /** Luz de injeção (MIL) e quantidade de códigos, do PID 0101. Nulo se o carro não respondeu. */
+    fun milStatus(): Pair<Boolean, Int>? {
+        val d = findData(send("0101"), "4101", 4) ?: return null
+        return Pair(d[0] and 0x80 != 0, d[0] and 0x7F)
+    }
+
+    /** Códigos de falha armazenados (modo 03). Lança IOException se o carro não respondeu. */
+    fun readDtcs(): List<String> {
+        val can = isCan()
+        val resp = send("03", 8000)
+        if (!temRespostaPositiva(resp, "43")) {
+            throw IOException(explain(resp) ?: "O carro não respondeu à leitura de códigos.")
+        }
+        return parseDtcs(resp, can)
+    }
+
+    /** Limpa os códigos e apaga a luz de injeção (modo 04). Lança IOException se o carro não confirmar. */
+    fun clearDtcs() {
+        val resp = send("04", 8000)
+        if (!temRespostaPositiva(resp, "44")) {
+            throw IOException(explain(resp) ?: "O carro não confirmou a limpeza dos códigos.")
+        }
     }
 
     /** Tensão medida pelo próprio adaptador (ATRV). */

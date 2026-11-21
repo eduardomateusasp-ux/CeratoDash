@@ -1,4 +1,4 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

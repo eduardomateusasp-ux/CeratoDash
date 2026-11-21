@@ -1,4 +1,9 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
+
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 data class Telemetry(
     val rpm: Float? = null,
@@ -32,6 +37,9 @@ data class ObdStatus(
     val state: ConnState = ConnState.DESCONECTADO,
     val message: String = ""
 )
+
+/** Resultado da leitura de diagnóstico. mil e milCount são nulos se o carro não informou o status. */
+data class DiagResult(val mil: Boolean?, val milCount: Int?, val codes: List<String>)
 
 /** Parâmetros para estimar consumo a partir do fluxo de ar (MAF). São valores aproximados. */
 enum class Fuel(val label: String, val afr: Float, val density: Float) {

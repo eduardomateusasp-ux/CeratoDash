@@ -1,4 +1,10 @@
-package br.com.ceratodash
+package br.com.ceratodash.service
+
+import br.com.ceratodash.R
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -15,6 +21,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
@@ -42,7 +50,9 @@ class ObdService : Service() {
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var nm: NotificationManager
+    private var recorder: TripRecorder? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -59,6 +69,36 @@ class ObdService : Service() {
         startForeground(NOTIF_ID, notification(ObdStatus(ConnState.CONECTANDO, "")))
         scope.launch {
             ObdManager.status.collect { nm.notify(NOTIF_ID, notification(it)) }
+        }
+        startRecording()
+    }
+
+    /** Amostra a telemetria a cada 500 ms para o histórico dos gráficos e para as viagens. */
+    private fun startRecording() {
+        val db = TripDb.get(this)
+        val rec = TripRecorder(db) { trip ->
+            TripLive.current.value = trip
+            if (trip == null) TripLive.version.value += 1
+        }
+        recorder = rec
+        ioScope.launch {
+            // Viagem que ficou aberta porque o app foi encerrado de repente.
+            db.closeOpen()
+            var last = ConnState.DESCONECTADO
+            while (isActive) {
+                delay(500)
+                val now = System.currentTimeMillis()
+                val state = ObdManager.status.value.state
+                if (state == ConnState.CONECTADO && last != ConnState.CONECTADO) LiveHistory.history.reset()
+                last = state
+                val t = ObdManager.telemetry.value
+                try {
+                    rec.onSample(now, t)
+                } catch (e: Exception) {
+                    // Falha no banco não pode derrubar a leitura do carro.
+                }
+                LiveHistory.history.add(now, t)
+            }
         }
     }
 
@@ -82,6 +122,11 @@ class ObdService : Service() {
     }
 
     override fun onDestroy() {
+        ioScope.cancel()
+        try {
+            recorder?.finish(System.currentTimeMillis())
+        } catch (e: Exception) {
+        }
         scope.cancel()
         ObdManager.stop()
         super.onDestroy()

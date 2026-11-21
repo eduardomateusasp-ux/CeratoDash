@@ -1,4 +1,9 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
+
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 /**
  * Consumo instantâneo estimado a partir do fluxo de ar (MAF, g/s).

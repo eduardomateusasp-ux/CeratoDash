@@ -1,4 +1,9 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
+
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice

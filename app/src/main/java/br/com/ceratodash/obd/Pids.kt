@@ -1,4 +1,9 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
+
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 /**
  * Um sensor OBD-II padrão (modo 01): código, nº de bytes da resposta, fórmula e onde guardar.

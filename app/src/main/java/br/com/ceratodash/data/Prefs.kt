@@ -1,4 +1,9 @@
-package br.com.ceratodash
+package br.com.ceratodash.data
+
+import br.com.ceratodash.data.*
+import br.com.ceratodash.obd.*
+import br.com.ceratodash.service.*
+import br.com.ceratodash.ui.*
 
 import android.content.Context
 
@@ -11,6 +16,13 @@ object Prefs {
 
     fun fuel(c: Context): Fuel = Fuel.values().getOrElse(sp(c).getInt("fuel", 0)) { Fuel.GASOLINA }
     fun setFuel(c: Context, f: Fuel) = sp(c).edit().putInt("fuel", f.ordinal).apply()
+
+    /** Sensores escolhidos para os gráficos da tela de Telemetria. */
+    fun chartKeys(c: Context): List<String> =
+        sp(c).getString("charts", "rpm,speed,coolant")!!.split(',').filter { it.isNotBlank() }
+
+    fun setChartKeys(c: Context, keys: List<String>) =
+        sp(c).edit().putString("charts", keys.joinToString(",")).apply()
 
     /** Iniciar a leitura junto com o sistema da central. Desligado por padrão. */
     fun autostart(c: Context): Boolean = sp(c).getBoolean("autostart", false)

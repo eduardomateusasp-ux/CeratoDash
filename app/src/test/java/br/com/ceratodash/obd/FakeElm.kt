@@ -1,4 +1,4 @@
-package br.com.ceratodash
+package br.com.ceratodash.obd
 
 import java.io.InputStream
 import java.io.OutputStream
