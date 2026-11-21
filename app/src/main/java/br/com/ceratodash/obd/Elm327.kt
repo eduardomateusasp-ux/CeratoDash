@@ -12,6 +12,10 @@ import java.io.OutputStream
 /** Conversa com o adaptador ELM327 (comandos AT e consultas OBD-II). */
 class Elm327(private val input: InputStream, private val output: OutputStream) {
 
+    /** Se definido, recebe cada comando e resposta (usado só durante a inicialização, para diagnóstico). */
+    @Volatile
+    var trace: ((String) -> Unit)? = null
+
     /** Último problema relatado pelo adaptador/carro numa consulta sem resposta, já em português. */
     @Volatile
     var lastProblem: String? = null
@@ -89,12 +93,17 @@ class Elm327(private val input: InputStream, private val output: OutputStream) {
             if (input.available() > 0) {
                 val c = input.read()
                 if (c < 0) throw IOException("Conexão encerrada pelo adaptador")
-                if (c.toChar() == '>') return normalize(sb.toString())
+                if (c.toChar() == '>') {
+                    val r = normalize(sb.toString())
+                    trace?.invoke(cmd + " -> " + r.replace('\n', '|').take(70))
+                    return r
+                }
                 sb.append(c.toChar())
             } else {
                 Thread.sleep(4)
             }
         }
+        trace?.invoke(cmd + " -> sem resposta")
         throw IOException("O adaptador não respondeu a $cmd")
     }
 

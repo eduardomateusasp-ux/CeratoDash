@@ -166,12 +166,20 @@ object ObdManager {
                         null
                     }) ?: address
                     publish(s, ObdStatus(ConnState.CONECTANDO, name))
+                    ConnLog.add("Conectando a $address (modo ${Prefs.transport(app).label})")
                     val (link, ble) = openLink(app, device, s, preferBle, Prefs.transport(app))
                     preferBle = ble
                     try {
                         val elm = Elm327(link.input, link.output)
                         publish(s, ObdStatus(ConnState.INICIALIZANDO, name))
-                        val supported = elm.initialize()
+                        ConnLog.add("Canal aberto. Iniciando o ELM327")
+                        elm.trace = { ConnLog.add(it) }
+                        val supported = try {
+                            elm.initialize()
+                        } finally {
+                            elm.trace = null
+                        }
+                        ConnLog.add("ELM327 pronto. Sensores: " + supported.sorted().joinToString(" "))
                         publish(s, ObdStatus(ConnState.CONECTADO, name))
                         ready = true
                         poll(elm, supported, s)
@@ -186,6 +194,7 @@ object ObdManager {
                 throw e
             } catch (e: Exception) {
                 if (s.closed) return
+                ConnLog.add("Erro: " + (e.message ?: "falha desconhecida"))
                 publish(s, ObdStatus(ConnState.ERRO, e.message ?: "Falha desconhecida"))
                 publish(s, Telemetry())
             }
@@ -210,8 +219,10 @@ object ObdManager {
                 if (!ble && type == BluetoothDevice.DEVICE_TYPE_LE) continue
             }
             try {
+                ConnLog.add("Tentando " + (if (ble) "BLE" else "Bluetooth clássico"))
                 return (if (ble) openBle(app, device, s) else openClassic(device, s)) to ble
             } catch (e: IOException) {
+                ConnLog.add("Falhou: " + (e.message ?: "sem detalhe"))
                 last = e
                 if (s.closed) throw IOException("Conexão cancelada")
             }

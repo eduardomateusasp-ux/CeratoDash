@@ -219,7 +219,8 @@ class MainActivity : AppCompatActivity() {
             { testVoice() },
             { toggleOverlay() },
             { searchAdapter() },
-            { search.openManual() }
+            { search.openManual() },
+            { LogDialog.show(this) }
         )
         screens.add(dash)
         screens.add(telemetry)

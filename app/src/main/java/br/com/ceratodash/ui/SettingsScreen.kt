@@ -26,7 +26,8 @@ class SettingsScreen(
     private val onTestVoice: () -> Unit,
     private val onToggleOverlay: () -> Unit,
     private val onSearchAdapter: () -> Unit,
-    private val onManualAddress: () -> Unit
+    private val onManualAddress: () -> Unit,
+    private val onShowLog: () -> Unit
 ) : ScrollView(activity) {
 
     private val box = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -86,7 +87,8 @@ class SettingsScreen(
         adapter.addView(
             row(
                 activity.bigButton("Reconectar") { reconnect() },
-                activity.bigButton("Desconectar") { ObdService.stop(activity) }
+                activity.bigButton("Desconectar") { ObdService.stop(activity) },
+                activity.bigButton("Ver registro da conexão") { onShowLog() }
             )
         )
 

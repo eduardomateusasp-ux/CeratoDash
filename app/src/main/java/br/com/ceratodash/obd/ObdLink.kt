@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import br.com.ceratodash.data.ConnLog
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -111,6 +112,7 @@ class BleLink(private val ctx: Context, private val device: BluetoothDevice) : O
 
     private val callback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+            ConnLog.add("BLE: estado $newState (2=conectado, 0=desconectado), código $status")
             if (newState == BluetoothProfile.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
                 // Uma pequena espera antes de listar os serviços evita falhas em vários aparelhos.
                 main.postDelayed({ if (!gone) g.discoverServices() }, 400)
@@ -123,6 +125,9 @@ class BleLink(private val ctx: Context, private val device: BluetoothDevice) : O
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) return fail("Falha ao listar os serviços BLE (código $status)")
+            for (svc in g.services) {
+                ConnLog.add("BLE serviço ${SerialServices.short(svc.uuid.toString())}: " + svc.characteristics.joinToString(" ") { SerialServices.short(it.uuid.toString()) + "(" + flags(it.properties) + ")" })
+            }
             var best: Triple<Int, BluetoothGattCharacteristic, BluetoothGattCharacteristic>? = null
             for (svc in g.services) {
                 val id = svc.uuid.toString()
@@ -145,6 +150,7 @@ class BleLink(private val ctx: Context, private val device: BluetoothDevice) : O
             }
             val rxChar = found.second
             tx = found.third
+            ConnLog.add("BLE usando: notificação ${SerialServices.short(rxChar.uuid.toString())}, escrita ${SerialServices.short(found.third.uuid.toString())}")
             g.setCharacteristicNotification(rxChar, true)
             val d = rxChar.getDescriptor(ccc) ?: return fail("Característica BLE sem descritor de notificação")
             val indicate = rxChar.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY == 0
@@ -154,6 +160,7 @@ class BleLink(private val ctx: Context, private val device: BluetoothDevice) : O
         }
 
         override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) {
+            ConnLog.add("BLE: notificações " + (if (status == BluetoothGatt.GATT_SUCCESS) "ativadas" else "falharam (código $status)"))
             if (status == BluetoothGatt.GATT_SUCCESS) ready.countDown() else fail("Falha ao ativar as notificações BLE (código $status)")
         }
 
@@ -167,8 +174,21 @@ class BleLink(private val ctx: Context, private val device: BluetoothDevice) : O
         }
     }
 
+    private fun flags(p: Int): String {
+        val sb = StringBuilder()
+        if (p and BluetoothGattCharacteristic.PROPERTY_READ != 0) sb.append('L')
+        if (p and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) sb.append('E')
+        if (p and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) sb.append('e')
+        if (p and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) sb.append('N')
+        if (p and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) sb.append('I')
+        return sb.toString()
+    }
+
     /** Conecta e prepara a comunicação. Lança IOException se algo falhar. */
     fun connect(timeoutMs: Long = 12000) {
+        ConnLog.add("BLE: conectando (L=ler, E=escrever, e=escrever sem resposta, N=notificar, I=indicar)")
+        // Dá um instante para a busca terminar de parar: conectar com a busca ligada falha em vários aparelhos.
+        Thread.sleep(300)
         gatt = device.connectGatt(ctx, false, callback, BluetoothDevice.TRANSPORT_LE)
         if (!ready.await(timeoutMs, TimeUnit.MILLISECONDS)) fail("Tempo esgotado ao conectar por BLE. O adaptador está ligado e longe de outro aparelho?")
         failure?.let {
