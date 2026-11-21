@@ -3,7 +3,6 @@ package br.com.ceratodash.ui
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -14,13 +13,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import br.com.ceratodash.R
+import br.com.ceratodash.data.AlertLimits
+import br.com.ceratodash.data.Alerts
 import br.com.ceratodash.data.Prefs
 import br.com.ceratodash.data.TripLive
 import br.com.ceratodash.obd.ConnState
-import br.com.ceratodash.obd.Fuel
 import br.com.ceratodash.obd.ObdManager
 import br.com.ceratodash.obd.ObdStatus
 import br.com.ceratodash.service.ObdService
@@ -35,16 +37,30 @@ class MainActivity : AppCompatActivity() {
         const val VIAGENS = 3
         const val MAPAS = 4
         const val AJUSTES = 5
+        const val FADE_MS = 150L
     }
+
+    private class NavItem(val name: String, val icon: Int)
+
+    private val nav = listOf(
+        NavItem("Painel", R.drawable.ic_nav_painel),
+        NavItem("Telemetria", R.drawable.ic_nav_telemetria),
+        NavItem("Diagnóstico", R.drawable.ic_nav_diagnostico),
+        NavItem("Viagens", R.drawable.ic_nav_viagens),
+        NavItem("Mapas", R.drawable.ic_nav_mapas),
+        NavItem("Ajustes", R.drawable.ic_nav_ajustes)
+    )
 
     private lateinit var dash: DashboardView
     private lateinit var telemetry: TelemetryScreen
     private lateinit var trips: TripsScreen
-    private lateinit var statusText: TextView
-    private lateinit var statusDot: View
+    private lateinit var settings: SettingsScreen
+    private lateinit var banner: AlertBanner
+    private lateinit var status: StatusIndicator
     private val screens = ArrayList<View>()
     private val railItems = ArrayList<TextView>()
     private var current = PAINEL
+    private var limits = AlertLimits()
 
     private val match = LinearLayout.LayoutParams.MATCH_PARENT
     private val wrap = LinearLayout.LayoutParams.WRAP_CONTENT
@@ -53,18 +69,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         ObdManager.fuel = Prefs.fuel(this)
+        limits = Prefs.limits(this)
         setContentView(buildUi())
-        show(PAINEL)
+        dash.limits = limits
+        show(PAINEL, animate = false)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     ObdManager.telemetry.collect {
                         dash.update(it)
+                        banner.show(Alerts.evaluate(it, limits))
                         if (current == TELEMETRIA) telemetry.refresh()
                     }
                 }
-                launch { ObdManager.status.collect { renderStatus(it) } }
+                launch { ObdManager.status.collect { status.render(it) } }
                 launch { TripLive.current.collect { trips.setLive(it) } }
                 launch { TripLive.version.collect { trips.reload() } }
             }
@@ -73,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         if (!ObdManager.isRunning) {
             if (Prefs.adapter(this) == null) {
                 ObdManager.status.value =
-                    ObdStatus(ConnState.DESCONECTADO, "toque em Ajustes e escolha o adaptador")
+                    ObdStatus(ConnState.DESCONECTADO, "abra Ajustes e escolha o adaptador")
             } else {
                 ObdService.start(this)
             }
@@ -83,125 +102,87 @@ class MainActivity : AppCompatActivity() {
     private fun buildUi(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(DashboardView.BG)
+            setBackgroundColor(Theme.BG)
         }
 
-        // Navegação lateral
+        // Navegação lateral: ícone grande com rótulo, alvo mínimo de 64 dp.
         val rail = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(DashboardView.SURFACE)
+            setBackgroundColor(Theme.SURFACE)
         }
-        val names = listOf("Painel", "Telemetria", "Diagnóstico", "Viagens", "Mapas", "Ajustes")
-        for ((i, n) in names.withIndex()) {
+        for ((i, n) in nav.withIndex()) {
             val item = TextView(this).apply {
-                text = n
-                textSize = 14f
+                text = n.name
+                textSize = Theme.MIN_SIZE
+                typeface = Theme.bodyMedium
                 gravity = Gravity.CENTER
                 minHeight = dp(64)
-                setOnClickListener { if (i == AJUSTES) showSettings() else show(i) }
+                compoundDrawablePadding = dp(2)
+                setPadding(dp(4), dp(8), dp(4), dp(8))
+                setOnClickListener { show(i) }
             }
             railItems.add(item)
             rail.addView(item, LinearLayout.LayoutParams(dp(104), 0, 1f))
         }
         root.addView(rail, LinearLayout.LayoutParams(wrap, match))
 
-        // Conteúdo: barra de status em cima e a tela escolhida embaixo
+        // Conteúdo: status e faixa de alerta em cima, a tela escolhida embaixo.
         val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val bar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(24), dp(8), dp(24), dp(8))
-        }
-        statusDot = View(this).apply { background = dot(DashboardView.MUTED) }
-        bar.addView(statusDot, LinearLayout.LayoutParams(dp(12), dp(12)).apply { rightMargin = dp(10) })
-        statusText = TextView(this).apply {
-            setTextColor(DashboardView.TEXT)
-            textSize = 16f
-        }
-        bar.addView(statusText, LinearLayout.LayoutParams(0, wrap, 1f))
-        content.addView(bar, LinearLayout.LayoutParams(match, wrap))
+        status = StatusIndicator(this).apply { setPadding(dp(24), dp(10), dp(24), dp(10)) }
+        content.addView(status, LinearLayout.LayoutParams(match, wrap))
+        banner = AlertBanner(this)
+        content.addView(banner, LinearLayout.LayoutParams(match, wrap))
 
         val frame = FrameLayout(this)
         dash = DashboardView(this)
         telemetry = TelemetryScreen(this)
         trips = TripsScreen(this)
+        settings = SettingsScreen(this, { pickAdapter() }, { l ->
+            limits = l
+            dash.limits = l
+        })
         screens.add(dash)
         screens.add(telemetry)
         screens.add(DiagnosticScreen(this))
         screens.add(trips)
         screens.add(MapsScreen(this) { pkg, nome -> openApp(pkg, nome) })
+        screens.add(settings)
         for (s in screens) frame.addView(s, FrameLayout.LayoutParams(match, match))
         content.addView(frame, LinearLayout.LayoutParams(match, 0, 1f))
         root.addView(content, LinearLayout.LayoutParams(0, match, 1f))
         return root
     }
 
-    private fun show(index: Int) {
+    private fun show(index: Int, animate: Boolean = true) {
+        val changed = index != current
         current = index
-        for ((i, s) in screens.withIndex()) s.visibility = if (i == index) View.VISIBLE else View.GONE
+        for ((i, s) in screens.withIndex()) {
+            if (i == index) {
+                s.visibility = View.VISIBLE
+                if (animate && changed) {
+                    // Transição curta (150 ms), a única animação fora dos ponteiros.
+                    s.alpha = 0f
+                    s.animate().alpha(1f).setDuration(FADE_MS).start()
+                } else {
+                    s.alpha = 1f
+                }
+            } else {
+                s.animate().cancel()
+                s.visibility = View.GONE
+            }
+        }
         for ((i, item) in railItems.withIndex()) {
             val on = i == index
-            item.setTextColor(if (on) DashboardView.INFO else DashboardView.MUTED)
-            item.setBackgroundColor(if (on) DashboardView.HIGH else DashboardView.SURFACE)
+            val color = if (on) Theme.INFO else Theme.MUTED
+            item.setTextColor(color)
+            item.setBackgroundColor(if (on) Theme.HIGH else Theme.SURFACE)
+            val icon = ContextCompat.getDrawable(this, nav[i].icon)?.mutate()
+            icon?.setTint(color)
+            item.setCompoundDrawablesWithIntrinsicBounds(null, icon, null, null)
         }
         if (index == TELEMETRIA) telemetry.refresh()
         if (index == VIAGENS) trips.reload()
-    }
-
-    private fun dot(color: Int) = GradientDrawable().apply {
-        shape = GradientDrawable.OVAL
-        setColor(color)
-    }
-
-    private fun renderStatus(s: ObdStatus) {
-        val color = when (s.state) {
-            ConnState.CONECTADO -> DashboardView.OK
-            ConnState.CONECTANDO, ConnState.INICIALIZANDO -> DashboardView.WARN
-            ConnState.ERRO -> DashboardView.DANGER
-            ConnState.DESCONECTADO -> DashboardView.MUTED
-        }
-        (statusDot.background as GradientDrawable).setColor(color)
-        statusText.text = if (s.message.isBlank()) s.state.label else "${s.state.label}: ${s.message}"
-    }
-
-    private fun showSettings() {
-        val auto = if (Prefs.autostart(this)) "ligado" else "desligado"
-        val items = arrayOf(
-            "Escolher adaptador OBDII",
-            "Combustível: ${ObdManager.fuel.label} (tocar para alternar)",
-            "Iniciar com o sistema: $auto (tocar para alternar)",
-            "Reconectar",
-            "Desconectar"
-        )
-        AlertDialog.Builder(this)
-            .setTitle("Ajustes")
-            .setItems(items) { _, i ->
-                when (i) {
-                    0 -> pickAdapter()
-                    1 -> toggleFuel()
-                    2 -> toggleAutostart()
-                    3 -> reconnect()
-                    4 -> ObdService.stop(this)
-                }
-            }
-            .show()
-    }
-
-    private fun toggleFuel() {
-        val next = if (ObdManager.fuel == Fuel.GASOLINA) Fuel.ETANOL else Fuel.GASOLINA
-        ObdManager.fuel = next
-        Prefs.setFuel(this, next)
-        toast("Combustível: ${next.label}")
-    }
-
-    private fun toggleAutostart() {
-        val on = !Prefs.autostart(this)
-        Prefs.setAutostart(this, on)
-        toast(if (on) "A leitura vai iniciar junto com a central." else "Início com o sistema desligado.")
-    }
-
-    private fun reconnect() {
-        if (Prefs.adapter(this) == null) toast("Escolha o adaptador primeiro.") else ObdService.start(this)
+        if (index == AJUSTES) settings.refresh()
     }
 
     @SuppressLint("MissingPermission")
@@ -236,6 +217,7 @@ class MainActivity : AppCompatActivity() {
             .setItems(names) { _, i ->
                 Prefs.setAdapter(this, devices[i].address)
                 ObdService.start(this)
+                settings.refresh()
             }
             .show()
     }

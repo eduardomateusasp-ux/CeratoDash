@@ -24,6 +24,15 @@ object Prefs {
     fun setChartKeys(c: Context, keys: List<String>) =
         sp(c).edit().putString("charts", keys.joinToString(",")).apply()
 
+    /** Limites de alerta (rotação máxima e temperatura crítica da água). */
+    fun limits(c: Context): AlertLimits = AlertLimits(
+        rpmMax = sp(c).getInt("rpmMax", 6500),
+        waterDanger = sp(c).getInt("waterDanger", 108)
+    )
+
+    fun setRpmMax(c: Context, v: Int) = sp(c).edit().putInt("rpmMax", v).apply()
+    fun setWaterDanger(c: Context, v: Int) = sp(c).edit().putInt("waterDanger", v).apply()
+
     /** Iniciar a leitura junto com o sistema da central. Desligado por padrão. */
     fun autostart(c: Context): Boolean = sp(c).getBoolean("autostart", false)
     fun setAutostart(c: Context, on: Boolean) = sp(c).edit().putBoolean("autostart", on).apply()

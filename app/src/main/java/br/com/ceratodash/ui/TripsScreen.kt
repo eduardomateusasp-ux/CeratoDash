@@ -27,7 +27,7 @@ class TripsScreen(private val activity: AppCompatActivity) : LinearLayout(activi
         orientation = VERTICAL
         setPadding(activity.dp(24), activity.dp(16), activity.dp(24), activity.dp(16))
         val head = LinearLayout(activity).apply { orientation = HORIZONTAL }
-        head.addView(activity.label("Viagens", 24f, DashboardView.TEXT, true), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        head.addView(activity.label("Viagens", 24f, Theme.TEXT, true), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         clearAll.layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         head.addView(clearAll)
         addView(head)
@@ -62,7 +62,7 @@ class TripsScreen(private val activity: AppCompatActivity) : LinearLayout(activi
             list.addView(
                 activity.label(
                     "Nenhuma viagem gravada. A viagem começa sozinha quando o motor liga e termina 20 segundos depois de desligar.",
-                    18f, DashboardView.MUTED
+                    18f, Theme.MUTED
                 )
             )
             return
@@ -78,11 +78,11 @@ class TripsScreen(private val activity: AppCompatActivity) : LinearLayout(activi
     private fun card(t: Trip, title: String, onDelete: (() -> Unit)?): LinearLayout {
         val c = LinearLayout(activity).apply {
             orientation = VERTICAL
-            background = activity.rounded(DashboardView.SURFACE, 16)
+            background = activity.rounded(Theme.SURFACE, 16)
             setPadding(activity.dp(16), activity.dp(12), activity.dp(16), activity.dp(12))
         }
         val top = LinearLayout(activity).apply { orientation = HORIZONTAL }
-        top.addView(activity.label(title, 20f, DashboardView.INFO, true), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        top.addView(activity.label(title, 20f, Theme.INFO, true), LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         if (onDelete != null) top.addView(activity.bigButton("Apagar") { onDelete() })
         c.addView(top)
         c.addView(activity.label("Duração: ${duration(t.durationMs)}    Distância: ${String.format("%.1f", t.distanceKm)} km", 18f))

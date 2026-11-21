@@ -9,7 +9,7 @@ class MapsScreen(context: Context, private val open: (pkg: String, nome: String)
     init {
         orientation = VERTICAL
         setPadding(context.dp(24), context.dp(16), context.dp(24), context.dp(16))
-        addView(context.label("Mapas", 24f, DashboardView.TEXT, true))
+        addView(context.label("Mapas", 24f, Theme.TEXT, true))
         val row = LinearLayout(context).apply { orientation = HORIZONTAL }
         row.addView(context.bigButton("Google Maps") { open("com.google.android.apps.maps", "Google Maps") })
         row.addView(context.bigButton("Waze") { open("com.waze", "Waze") })
@@ -17,7 +17,7 @@ class MapsScreen(context: Context, private val open: (pkg: String, nome: String)
         val note: TextView = context.label(
             "O Google Maps funciona sem internet se você baixar as áreas antes. O Waze precisa de internet. " +
                 "A leitura do carro continua funcionando enquanto o mapa está aberto.",
-            18f, DashboardView.MUTED
+            18f, Theme.MUTED
         )
         addView(note, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = context.dp(16) })
     }

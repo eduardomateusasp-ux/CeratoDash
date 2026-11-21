@@ -18,15 +18,15 @@ class DiagnosticScreen(private val activity: AppCompatActivity) : LinearLayout(a
 
     private val readBtn: Button
     private val clearBtn: Button
-    private val info = activity.label("Toque em Ler códigos para consultar o carro.", 18f, DashboardView.MUTED)
-    private val mil = activity.label("", 20f, DashboardView.TEXT, true)
+    private val info = activity.label("Toque em Ler códigos para consultar o carro.", 18f, Theme.MUTED)
+    private val mil = activity.label("", 20f, Theme.TEXT, true)
     private val list = LinearLayout(activity).apply { orientation = VERTICAL }
     private var busy = false
 
     init {
         orientation = VERTICAL
         setPadding(activity.dp(24), activity.dp(16), activity.dp(24), activity.dp(16))
-        addView(activity.label("Diagnóstico", 24f, DashboardView.TEXT, true))
+        addView(activity.label("Diagnóstico", 24f, Theme.TEXT, true))
 
         val row = LinearLayout(activity).apply { orientation = HORIZONTAL }
         readBtn = activity.bigButton("Ler códigos") { read() }
@@ -51,7 +51,7 @@ class DiagnosticScreen(private val activity: AppCompatActivity) : LinearLayout(a
     private fun read() {
         if (busy) return
         setBusy(true)
-        info.setTextColor(DashboardView.MUTED)
+        info.setTextColor(Theme.MUTED)
         info.text = "Consultando o carro..."
         activity.lifecycleScope.launch {
             try {
@@ -83,7 +83,7 @@ class DiagnosticScreen(private val activity: AppCompatActivity) : LinearLayout(a
     private fun clear() {
         if (busy) return
         setBusy(true)
-        info.setTextColor(DashboardView.MUTED)
+        info.setTextColor(Theme.MUTED)
         info.text = "Apagando os códigos..."
         activity.lifecycleScope.launch {
             try {
@@ -103,41 +103,41 @@ class DiagnosticScreen(private val activity: AppCompatActivity) : LinearLayout(a
     private fun showError(msg: String) {
         mil.text = ""
         list.removeAllViews()
-        info.setTextColor(DashboardView.DANGER)
+        info.setTextColor(Theme.DANGER)
         info.text = msg
     }
 
     private fun render(r: DiagResult) {
-        info.setTextColor(DashboardView.MUTED)
+        info.setTextColor(Theme.MUTED)
         info.text = ""
         when (r.mil) {
             null -> {
                 mil.text = "Luz de injeção: o carro não informou"
-                mil.setTextColor(DashboardView.MUTED)
+                mil.setTextColor(Theme.MUTED)
             }
             true -> {
                 mil.text = "Luz de injeção: acesa (${r.milCount ?: 0} códigos)"
-                mil.setTextColor(DashboardView.WARN)
+                mil.setTextColor(Theme.WARN)
             }
             false -> {
                 mil.text = "Luz de injeção: apagada"
-                mil.setTextColor(DashboardView.OK)
+                mil.setTextColor(Theme.OK)
             }
         }
         list.removeAllViews()
         if (r.codes.isEmpty()) {
-            list.addView(activity.label("Nenhum código de falha armazenado.", 18f, DashboardView.OK))
+            list.addView(activity.label("Nenhum código de falha armazenado.", 18f, Theme.OK))
             return
         }
         for (code in r.codes) {
             val desc = DtcTable.describe(code) ?: "sem descrição na tabela genérica (pode ser código do fabricante)"
             val card = LinearLayout(activity).apply {
                 orientation = VERTICAL
-                background = activity.rounded(DashboardView.SURFACE, 16)
+                background = activity.rounded(Theme.SURFACE, 16)
                 setPadding(activity.dp(16), activity.dp(12), activity.dp(16), activity.dp(12))
             }
-            card.addView(activity.label(code, 24f, DashboardView.WARN, true))
-            card.addView(activity.label(desc, 18f, DashboardView.TEXT))
+            card.addView(activity.label(code, 24f, Theme.WARN, true))
+            card.addView(activity.label(desc, 18f, Theme.TEXT))
             list.addView(card, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { bottomMargin = activity.dp(8) })
         }
     }

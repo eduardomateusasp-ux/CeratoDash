@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tokens de cor do CeratoDash. Fonte única: o código lê estes valores pela classe Theme. Somente modo escuro. -->
+<resources>
+    <color name="bg">#0B0D10</color>
+    <color name="surface">#14181D</color>
+    <color name="surface_high">#1C2229</color>
+    <color name="surface_pressed">#2A333D</color>
+    <color name="accent">#FF3B30</color>
+    <color name="info">#00D1FF</color>
+    <color name="ok">#2ED573</color>
+    <color name="warn">#FFB020</color>
+    <color name="danger">#FF453A</color>
+    <color name="text">#F2F5F7</color>
+    <color name="text_muted">#8A94A0</color>
+</resources>

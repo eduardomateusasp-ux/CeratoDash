@@ -23,14 +23,14 @@ class TelemetryScreen(context: Context) : LinearLayout(context) {
 
     private val chips = LinearLayout(context).apply { orientation = HORIZONTAL }
     private val charts = ChartsView(context)
-    private val empty = context.label("Aguardando dados do carro. Só aparecem os sensores que o carro responder.", 18f, DashboardView.MUTED)
+    private val empty = context.label("Aguardando dados do carro. Só aparecem os sensores que o carro responder.", 18f, Theme.MUTED)
     private var shownKeys: List<String> = emptyList()
     private val selected = Prefs.chartKeys(context).toMutableList()
 
     init {
         orientation = VERTICAL
         setPadding(context.dp(24), context.dp(16), context.dp(24), context.dp(16))
-        addView(context.label("Telemetria", 24f, DashboardView.TEXT, true))
+        addView(context.label("Telemetria", 24f, Theme.TEXT, true))
         val scroll = HorizontalScrollView(context).apply { isHorizontalScrollBarEnabled = false }
         scroll.addView(chips)
         addView(scroll, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = context.dp(8) })
@@ -58,7 +58,8 @@ class TelemetryScreen(context: Context) : LinearLayout(context) {
             val s = Sensors.byKey(key) ?: continue
             val chip = TextView(context).apply {
                 text = if (s.unit == "L/h" || s.unit == "km/L") "${s.label} (${s.unit})" else s.label
-                textSize = 16f
+                textSize = Theme.LABEL
+                typeface = Theme.bodyMedium
                 gravity = android.view.Gravity.CENTER
                 minHeight = context.dp(48)
                 setPadding(context.dp(16), 0, context.dp(16), 0)
@@ -70,10 +71,10 @@ class TelemetryScreen(context: Context) : LinearLayout(context) {
     }
 
     private fun styleChip(chip: TextView, on: Boolean) {
-        chip.setTextColor(if (on) DashboardView.INFO else DashboardView.MUTED)
+        chip.setTextColor(if (on) Theme.INFO else Theme.MUTED)
         chip.background = context.rounded(
-            if (on) DashboardView.HIGH else DashboardView.SURFACE, 12,
-            if (on) DashboardView.INFO else DashboardView.MUTED, 1
+            if (on) Theme.HIGH else Theme.SURFACE, 12,
+            if (on) Theme.INFO else Theme.MUTED, 1
         )
     }
 
@@ -93,15 +94,15 @@ class ChartsView(context: Context) : View(context) {
     private var sensors: List<Sensor> = emptyList()
     private val buf = FloatArray(LiveHistory.history.size)
 
-    private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = DashboardView.SURFACE }
+    private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Theme.SURFACE }
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = DashboardView.INFO
+        color = Theme.INFO
         style = Paint.Style.STROKE
         strokeWidth = context.dp(2).toFloat()
         strokeJoin = Paint.Join.ROUND
     }
     private val grid = Paint().apply {
-        color = DashboardView.HIGH
+        color = Theme.HIGH
         strokeWidth = 1f
     }
     private val txt = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -133,13 +134,15 @@ class ChartsView(context: Context) : View(context) {
             val last = if (count > 0) buf[count - 1] else Float.NaN
 
             txt.textAlign = Paint.Align.LEFT
-            txt.color = DashboardView.MUTED
+            txt.typeface = Theme.bodyMedium
+            txt.color = Theme.MUTED
             txt.textSize = context.sp(14f)
             val unit = if (s.unit.isNotEmpty()) " (${s.unit})" else ""
             c.drawText(s.label + unit, left + pad, top + pad + txt.textSize, txt)
 
             txt.textAlign = Paint.Align.RIGHT
-            txt.color = DashboardView.TEXT
+            txt.typeface = Theme.numSemi
+            txt.color = Theme.TEXT
             txt.textSize = context.sp(28f)
             val value = if (last.isNaN()) "--" else String.format("%.${s.decimals}f", last)
             c.drawText(value, left + cw - pad, top + pad + txt.textSize * 0.9f, txt)
@@ -149,7 +152,8 @@ class ChartsView(context: Context) : View(context) {
             if (chartBottom > chartTop + 20) drawLine(c, count, left + pad, chartTop, left + cw - pad, chartBottom)
 
             txt.textAlign = Paint.Align.LEFT
-            txt.color = DashboardView.MUTED
+            txt.typeface = Theme.bodyMedium
+            txt.color = Theme.MUTED
             txt.textSize = context.sp(14f)
             val peak = h.peak(s.key)
             val min = h.min(s.key)
