@@ -43,7 +43,7 @@ Painel de telemetria OBDII, esportivo e interativo, para a central multimídia A
 | Diagnóstico: ler códigos (modo 03), luz de injeção, limpar (modo 04) com confirmação | Feito | Descrição só para cerca de 85 códigos genéricos P0xxx (SAE J2012, tradução própria). Não testado no carro |
 | Viagens: início e fim automáticos, distância, tempo, média, máxima, consumo, histórico, apagar | Feito | Distância pela velocidade do OBD (sem GPS) |
 | Mapas: atalhos para Google Maps e Waze, faixa reduzida sobre o app | Feito | Faixa opcional, depende da permissão de sobreposição. Não testada |
-| Ajustes: adaptador, combustível, limites de alerta, iniciar com o sistema, foto do carro | Parcial | **Unidades (mph, °F, L/100 km) ainda não existem** |
+| Ajustes: adaptador, combustível, limites de alerta, iniciar com o sistema, foto do carro | Feito | Unidades: só km/h, °C e km/L, por decisão do dono (sem mph, °F ou L/100 km) |
 
 ### 2.4 Alertas
 | Requisito | Estado |

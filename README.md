@@ -56,7 +56,7 @@ Em Ajustes, Mapas: ligue a faixa para ver rotação, velocidade e água sobre o 
 - A descrição dos códigos de falha existe só para cerca de 85 códigos genéricos P0xxx (SAE J2012, tradução própria). Códigos do fabricante aparecem sem descrição.
 - Os limites do treinador de condução são valores gerais de direção econômica, não uma especificação da Kia, e precisam de calibração. Sem GPS, o limite de velocidade é o que você configura.
 - BLE só funciona com adaptador já pareado (não há varredura).
-- Unidades (mph, °F, L/100 km) ainda não existem.
+- O app usa só km/h, °C e km/L, de propósito.
 - O Google Maps funciona offline se você baixar as áreas antes. O Waze precisa de internet. O app não embute mapa (veja `docs/avaliacao-mapa-offline.md`).
 - O vermelho de perigo tem contraste de 5,2:1, abaixo da meta de 7:1 (`docs/design-system.md`).
 

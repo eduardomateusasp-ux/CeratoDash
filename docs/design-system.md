@@ -80,5 +80,5 @@ Ponteiro suave: cerca de 95% do caminho em 150 ms, independente da taxa de quadr
 
 ## Pendências
 - Alvos de toque: botões e itens de navegação seguem o mínimo, mas os chips de sensor da Telemetria têm 48 dp (abaixo dos 64 dp pedidos para a navegação).
-- Unidades (outras que km/h, °C e km/L) ainda não existem.
+- Unidades: só km/h, °C e km/L, por decisão do dono.
 - A aparência foi verificada só pela compilação. Falta conferir contraste, tamanhos e legibilidade na tela real da central.
