@@ -107,7 +107,7 @@ class CoachScreen(context: Context) : ScrollView(context) {
                     else -> Theme.DANGER
                 }
             )
-            scoreInfo.text = "Estilo: ${Prefs.coachStyle(context).label}    ${s.events} eventos em ${s.minutes} min"
+            scoreInfo.text = "Estilo: ${Prefs.coachStyle(context).label}    ${s.events} " + (if (s.events == 1) "evento" else "eventos") + " em ${s.minutes} min"
             val tip = s.tip
             now.text = tip?.tip ?: if (s.running) "Condução dentro do ideal agora." else "Motor desligado."
             now.setTextColor(if (tip != null) Theme.WARN else Theme.OK)

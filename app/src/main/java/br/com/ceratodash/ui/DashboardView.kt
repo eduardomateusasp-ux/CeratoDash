@@ -161,19 +161,20 @@ class DashboardView(context: Context) : View(context) {
         dRpm += (targetRpm - dRpm) * k
         dSpeed += (targetSpeed - dSpeed) * k
 
-        val r = minOf(w * 0.19f, h * 0.36f)
+        val r = minOf(w * 0.15f, h * 0.34f)
         val cy = h * 0.42f
         drawGauge(
-            c, rpmGauge, w * 0.19f, cy, r, dRpm,
+            c, rpmGauge, w * 0.155f, cy, r, dRpm,
             if (t.rpm != null) dRpm.toInt().toString() else "--"
         )
         drawGauge(
-            c, speedGauge, w * 0.81f, cy, r, dSpeed,
+            c, speedGauge, w * 0.845f, cy, r, dSpeed,
             if (t.speed != null) dSpeed.toInt().toString() else "--"
         )
         val blinking = (t.rpm ?: 0f) >= limits.rpmMax - 300f
         drawRpmBar(c, w, h, now, blinking)
-        drawCar(c, w * 0.5f, cy, w * 0.31f, h)
+        // O carro fica mais baixo que o centro dos gauges, para ocupar o espaço entre a barra de rotação e os cartões.
+        drawCar(c, w * 0.5f, h * 0.50f, w * 0.327f, h)
         drawCards(c, w, h)
 
         if (blinking || abs(targetRpm - dRpm) > 1f || abs(targetSpeed - dSpeed) > 0.3f) {
@@ -354,11 +355,14 @@ class DashboardView(context: Context) : View(context) {
             text.textAlign = Paint.Align.CENTER
             text.textSize = context.sp(Theme.MIN_SIZE)
             val tw = text.measureText(hs.title)
-            val ty = y + ring + context.dp(6) + text.textSize
+            // Bateria e Escapamento: rótulo acima do anel (longe do Motor). Os rótulos nunca saem da foto.
+            val ty = if (hs == Hotspot.BATERIA || hs == Hotspot.ESCAPAMENTO) y - ring - context.dp(10) else y + ring + context.dp(6) + text.textSize
+            val pad = context.dp(6)
+            val lx = x.coerceIn(photoRect.left + tw / 2 + pad, photoRect.right - tw / 2 - pad)
             fill.color = withAlpha(Theme.BG, 200)
-            tmp.set(x - tw / 2 - context.dp(6), ty - text.textSize, x + tw / 2 + context.dp(6), ty + context.dp(5))
+            tmp.set(lx - tw / 2 - pad, ty - text.textSize, lx + tw / 2 + pad, ty + context.dp(5))
             c.drawRoundRect(tmp, context.dp(8).toFloat(), context.dp(8).toFloat(), fill)
-            c.drawText(hs.title, x, ty, text)
+            c.drawText(hs.title, lx, ty, text)
         }
     }
 
@@ -418,7 +422,7 @@ class DashboardView(context: Context) : View(context) {
                     else -> Theme.OK
                 }, "voltage"
             ),
-            Card("Carga do motor (%)", tt.load?.let { it.toInt().toString() } ?: "--", Theme.TEXT, "load"),
+            Card("Carga (%)", tt.load?.let { it.toInt().toString() } ?: "--", Theme.TEXT, "load"),
             Card("Borboleta (%)", tt.throttle?.let { it.toInt().toString() } ?: "--", Theme.TEXT, "throttle"),
             when {
                 kml != null -> Card("Consumo (km/L)", String.format("%.1f", kml), Theme.TEXT, "kml")
@@ -456,7 +460,7 @@ class DashboardView(context: Context) : View(context) {
             c.drawText(card.value, left + pad, top + ch - pad, text)
 
             val key = card.key
-            if (key != null) drawSpark(c, key, left + cw * 0.55f, top + ch * 0.45f, left + cw - pad, top + ch - pad)
+            if (key != null) drawSpark(c, key, left + cw * 0.6f, top + ch * 0.45f, left + cw - pad, top + ch - pad)
         }
     }
 

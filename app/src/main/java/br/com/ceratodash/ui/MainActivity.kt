@@ -197,7 +197,7 @@ class MainActivity : AppCompatActivity() {
         for (s in screens) frame.addView(s, FrameLayout.LayoutParams(match, match))
         frame.addView(
             hotspotPanel,
-            FrameLayout.LayoutParams(dp(460), wrap, Gravity.CENTER)
+            FrameLayout.LayoutParams(dp(380), wrap, Gravity.CENTER)
         )
         content.addView(frame, LinearLayout.LayoutParams(match, 0, 1f))
         root.addView(content, LinearLayout.LayoutParams(0, match, 1f))
