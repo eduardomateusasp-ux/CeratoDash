@@ -1,0 +1,12 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+.kotlin/
+
+# Assinatura: nunca versionar chaves nem senhas
+*.jks
+*.keystore
+keystore.properties

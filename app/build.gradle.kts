@@ -1,0 +1,49 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "br.com.ceratodash"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "br.com.ceratodash"
+        minSdk = 24
+        // targetSdk 30: no Android 12 da central, as permissões Bluetooth antigas
+        // continuam valendo, sem pedir autorização em tempo de execução.
+        targetSdk = 30
+        versionCode = 1
+        versionName = "0.1.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            // Assinado com a chave de debug para o APK instalar direto por pendrive.
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    testImplementation("junit:junit:4.13.2")
+}
