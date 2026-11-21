@@ -46,10 +46,11 @@ class TripRecorder(
         const val END_AFTER_MS = 20_000L
         const val MAX_DT_MS = 2_000L
         const val SAVE_EVERY_MS = 30_000L
+        private const val NONE = -1L
     }
 
     private var current: Trip? = null
-    private var candidateSince = 0L
+    private var candidateSince = NONE
     private var lastRunning = 0L
     private var lastSample = 0L
     private var lastSave = 0L
@@ -60,9 +61,9 @@ class TripRecorder(
         val c = current
         if (c == null) {
             if (!running) {
-                candidateSince = 0L
+                candidateSince = NONE
             } else {
-                if (candidateSince == 0L) candidateSince = now
+                if (candidateSince == NONE) candidateSince = now
                 if (now - candidateSince >= START_AFTER_MS) begin(candidateSince, now)
             }
             lastSample = now
@@ -98,7 +99,7 @@ class TripRecorder(
     private fun begin(start: Long, now: Long) {
         val id = store.insert(start)
         current = Trip(id = id, startMs = start, endMs = now)
-        candidateSince = 0L
+        candidateSince = NONE
         lastRunning = now
         lastSave = now
         onChange(current)
