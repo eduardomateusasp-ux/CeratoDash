@@ -53,6 +53,7 @@ class ObdService : Service() {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var nm: NotificationManager
     private var recorder: TripRecorder? = null
+    private val announcer = VoiceAnnouncer()
 
     override fun onCreate() {
         super.onCreate()
@@ -71,6 +72,13 @@ class ObdService : Service() {
             ObdManager.status.collect { nm.notify(NOTIF_ID, notification(it)) }
         }
         startRecording()
+        // A voz só ocupa memória enquanto alguma opção de voz estiver ligada.
+        scope.launch {
+            while (isActive) {
+                if (Prefs.voiceAlerts(this@ObdService) || Prefs.voiceCoach(this@ObdService)) Speaker.init(this@ObdService) else Speaker.shutdown()
+                delay(1000)
+            }
+        }
     }
 
     /** Amostra a telemetria a cada 500 ms para o histórico dos gráficos e para as viagens. */
@@ -105,8 +113,14 @@ class ObdService : Service() {
                 }
                 LiveHistory.history.add(now, t)
                 // O treinador de condução usa a mesma amostra; a interface recebe o resumo.
-                LiveCoach.coach.onSample(now, t)
+                val fired = LiveCoach.coach.onSample(now, t)
                 LiveCoach.snapshot.value = LiveCoach.coach.snapshot(now)
+                // Voz (só se ligada nos Ajustes). Roda aqui, no serviço, então fala com o Maps na frente.
+                val phrases = announcer.onTick(
+                    now, Alerts.evaluate(t, Prefs.limits(applicationContext)), fired,
+                    Prefs.voiceAlerts(applicationContext), Prefs.voiceCoach(applicationContext)
+                )
+                for (p in phrases) Speaker.speak(p)
             }
         }
     }
@@ -132,6 +146,7 @@ class ObdService : Service() {
 
     override fun onDestroy() {
         ioScope.cancel()
+        Speaker.shutdown()
         try {
             recorder?.finish(System.currentTimeMillis())
         } catch (e: Exception) {

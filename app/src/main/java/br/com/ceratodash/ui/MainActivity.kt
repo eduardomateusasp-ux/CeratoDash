@@ -30,6 +30,7 @@ import br.com.ceratodash.obd.ConnState
 import br.com.ceratodash.obd.ObdManager
 import br.com.ceratodash.obd.ObdStatus
 import br.com.ceratodash.service.ObdService
+import br.com.ceratodash.service.Speaker
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -185,7 +186,8 @@ class MainActivity : AppCompatActivity() {
                 dash.limits = l
             },
             { launchPhotoPicker() },
-            { applyPrefs() }
+            { applyPrefs() },
+            { testVoice() }
         )
         screens.add(dash)
         screens.add(telemetry)
@@ -210,6 +212,18 @@ class MainActivity : AppCompatActivity() {
         dash.facingLeft = Prefs.carFacingLeft(this)
         dash.reloadPhoto()
         coachScreen.rebuild()
+    }
+
+    /** Fala uma frase de teste. Se a central não tiver voz em português, mostra o motivo. */
+    private fun testVoice() {
+        Speaker.init(this)
+        val problema = Speaker.problem
+        if (problema != null) {
+            toast(problema)
+            return
+        }
+        Speaker.speak("Voz do CeratoDash funcionando.")
+        if (!Speaker.ready) toast("Preparando a voz. Se não falar, toque em Testar voz de novo.")
     }
 
     private fun launchPhotoPicker() {

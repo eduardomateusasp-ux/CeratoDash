@@ -21,7 +21,8 @@ class SettingsScreen(
     private val onLimitsChanged: (AlertLimits) -> Unit,
     private val onPickPhoto: () -> Unit,
     /** Estilo de condução, limite de velocidade ou foto mudaram: a tela principal precisa reaplicar. */
-    private val onPrefsChanged: () -> Unit
+    private val onPrefsChanged: () -> Unit,
+    private val onTestVoice: () -> Unit
 ) : ScrollView(activity) {
 
     private val box = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -103,6 +104,24 @@ class SettingsScreen(
             )
         )
         alerts.addView(activity.label("Atenção a partir de ${lim.waterWarn} °C. Bateria: abaixo de 11,5 V ou acima de 15,2 V.", Theme.LABEL, Theme.MUTED))
+
+        val va = Prefs.voiceAlerts(activity)
+        val vc = Prefs.voiceCoach(activity)
+        val voice = card("Voz")
+        voice.addView(activity.label("Fala os alertas e as dicas de condução pelo mecanismo de voz do Android. Precisa de uma voz em português instalada na central. Desligada por padrão.", Theme.LABEL, Theme.MUTED))
+        voice.addView(
+            row(
+                activity.bigButton(if (va) "Voz nos alertas: ligada" else "Voz nos alertas: desligada") {
+                    Prefs.setVoiceAlerts(activity, !va)
+                    refresh()
+                }.also { it.stateStyle(activity, va) },
+                activity.bigButton(if (vc) "Voz nas dicas: ligada" else "Voz nas dicas: desligada") {
+                    Prefs.setVoiceCoach(activity, !vc)
+                    refresh()
+                }.also { it.stateStyle(activity, vc) }
+            )
+        )
+        voice.addView(row(activity.bigButton("Testar voz") { onTestVoice() }))
 
         val style = Prefs.coachStyle(activity)
         val coach = card("Condução")

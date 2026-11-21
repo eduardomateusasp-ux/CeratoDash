@@ -4,7 +4,8 @@ import br.com.ceratodash.obd.Telemetry
 
 enum class Level { ATENCAO, PERIGO }
 
-class Alert(val level: Level, val message: String)
+/** key identifica o tipo de alerta (para a voz não repetir); spoken é a frase falada. */
+class Alert(val level: Level, val message: String, val key: String = "", val spoken: String = message)
 
 /**
  * Limites de alerta. A temperatura de atenção é sempre 8 °C abaixo da crítica (padrão 100 e 108 °C).
@@ -25,15 +26,15 @@ object Alerts {
         val out = ArrayList<Alert>(3)
         val water = t.coolant
         if (water != null) {
-            if (water >= lim.waterDanger) out.add(Alert(Level.PERIGO, "Temperatura do motor alta: ${water.toInt()} °C"))
-            else if (water >= lim.waterWarn) out.add(Alert(Level.ATENCAO, "Temperatura do motor subindo: ${water.toInt()} °C"))
+            if (water >= lim.waterDanger) out.add(Alert(Level.PERIGO, "Temperatura do motor alta: ${water.toInt()} °C", "agua", "Perigo. Temperatura do motor alta"))
+            else if (water >= lim.waterWarn) out.add(Alert(Level.ATENCAO, "Temperatura do motor subindo: ${water.toInt()} °C", "agua", "Atenção. Temperatura do motor subindo"))
         }
         val v = t.voltage
         if (v != null && (v < lim.voltLow || v > lim.voltHigh)) {
-            out.add(Alert(Level.PERIGO, "Tensão da bateria fora do normal: " + String.format("%.1f", v) + " V"))
+            out.add(Alert(Level.PERIGO, "Tensão da bateria fora do normal: " + String.format("%.1f", v) + " V", "tensao", "Perigo. Tensão da bateria fora do normal"))
         }
         val rpm = t.rpm
-        if (rpm != null && rpm > lim.rpmMax) out.add(Alert(Level.PERIGO, "Rotação acima do limite: ${rpm.toInt()} rpm"))
+        if (rpm != null && rpm > lim.rpmMax) out.add(Alert(Level.PERIGO, "Rotação acima do limite: ${rpm.toInt()} rpm", "rpm", "Perigo. Rotação acima do limite"))
         out.sortByDescending { it.level.ordinal }
         return out
     }

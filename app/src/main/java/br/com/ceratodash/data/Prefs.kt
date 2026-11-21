@@ -43,6 +43,16 @@ object Prefs {
     fun carFacingLeft(c: Context): Boolean = sp(c).getBoolean("carLeft", true)
     fun setCarFacingLeft(c: Context, v: Boolean) = sp(c).edit().putBoolean("carLeft", v).apply()
 
+    /** Voz nos alertas e nas dicas de condução. Desligadas por padrão. */
+    fun voiceAlerts(c: Context): Boolean = sp(c).getBoolean("voiceAlerts", false)
+    fun setVoiceAlerts(c: Context, v: Boolean) = sp(c).edit().putBoolean("voiceAlerts", v).apply()
+    fun voiceCoach(c: Context): Boolean = sp(c).getBoolean("voiceCoach", false)
+    fun setVoiceCoach(c: Context, v: Boolean) = sp(c).edit().putBoolean("voiceCoach", v).apply()
+
+    /** Faixa reduzida do painel sobre outros apps (precisa da permissão de sobreposição). */
+    fun overlay(c: Context): Boolean = sp(c).getBoolean("overlay", false)
+    fun setOverlay(c: Context, v: Boolean) = sp(c).edit().putBoolean("overlay", v).apply()
+
     /** Iniciar a leitura junto com o sistema da central. Desligado por padrão. */
     fun autostart(c: Context): Boolean = sp(c).getBoolean("autostart", false)
     fun setAutostart(c: Context, on: Boolean) = sp(c).edit().putBoolean("autostart", on).apply()
