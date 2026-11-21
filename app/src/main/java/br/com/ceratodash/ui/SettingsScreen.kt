@@ -8,6 +8,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import br.com.ceratodash.data.AlertLimits
+import br.com.ceratodash.data.AppState
 import br.com.ceratodash.data.DrivingStyle
 import br.com.ceratodash.data.Prefs
 import br.com.ceratodash.obd.Fuel
@@ -22,7 +23,8 @@ class SettingsScreen(
     private val onPickPhoto: () -> Unit,
     /** Estilo de condução, limite de velocidade ou foto mudaram: a tela principal precisa reaplicar. */
     private val onPrefsChanged: () -> Unit,
-    private val onTestVoice: () -> Unit
+    private val onTestVoice: () -> Unit,
+    private val onToggleOverlay: () -> Unit
 ) : ScrollView(activity) {
 
     private val box = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -161,6 +163,17 @@ class SettingsScreen(
         )
         photo.addView(activity.label("Use um PNG ou JPG em vista lateral. Os pontos de motor, bateria e escapamento seguem a posição da frente do carro.", Theme.LABEL, Theme.MUTED))
         photo.addView(activity.label("Foto padrão: Kia Cerato 1.6 SX 2010, de order_242 (Wikimedia Commons), licença CC BY-SA 2.0.", Theme.LABEL, Theme.MUTED))
+
+        val ov = Prefs.overlay(activity)
+        val maps = card("Mapas")
+        maps.addView(activity.label("Mostra uma faixa pequena com rotação, velocidade e água sobre o Maps ou o Waze. Precisa da permissão Sobrepor outros apps, que esta central pode não ter. Desligada por padrão.", Theme.LABEL, Theme.MUTED))
+        maps.addView(
+            row(
+                activity.bigButton(if (ov) "Faixa sobre o mapa: ligada" else "Faixa sobre o mapa: desligada") { onToggleOverlay() }
+                    .also { it.stateStyle(activity, ov) }
+            )
+        )
+        AppState.overlayProblem?.let { maps.addView(activity.label(it, Theme.LABEL, Theme.DANGER)) }
 
         val sys = card("Sistema")
         val on = Prefs.autostart(activity)

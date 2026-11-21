@@ -16,7 +16,7 @@ class MapsScreen(context: Context, private val open: (pkg: String, nome: String)
         addView(row, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = context.dp(12) })
         val note: TextView = context.label(
             "O Google Maps funciona sem internet se você baixar as áreas antes. O Waze precisa de internet. " +
-                "A leitura do carro continua funcionando enquanto o mapa está aberto.",
+                "A leitura do carro continua funcionando enquanto o mapa está aberto. Com a faixa ligada nos Ajustes, rotação, velocidade e água aparecem sobre o mapa, se a central permitir.",
             18f, Theme.MUTED
         )
         addView(note, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = context.dp(16) })

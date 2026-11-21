@@ -54,6 +54,7 @@ class ObdService : Service() {
     private lateinit var nm: NotificationManager
     private var recorder: TripRecorder? = null
     private val announcer = VoiceAnnouncer()
+    private lateinit var overlay: OverlayStrip
 
     override fun onCreate() {
         super.onCreate()
@@ -71,12 +72,23 @@ class ObdService : Service() {
         scope.launch {
             ObdManager.status.collect { nm.notify(NOTIF_ID, notification(it)) }
         }
+        overlay = OverlayStrip(this)
         startRecording()
         // A voz só ocupa memória enquanto alguma opção de voz estiver ligada.
         scope.launch {
             while (isActive) {
                 if (Prefs.voiceAlerts(this@ObdService) || Prefs.voiceCoach(this@ObdService)) Speaker.init(this@ObdService) else Speaker.shutdown()
-                delay(1000)
+                // Faixa sobre o mapa: só com a opção ligada, com permissão e com outro app na frente.
+                val want = OverlayRules.shouldShow(Prefs.overlay(this@ObdService), overlay.canDraw(), AppState.activityVisible)
+                if (want) {
+                    overlay.show()
+                    val t = ObdManager.telemetry.value
+                    overlay.update(t, Alerts.evaluate(t, Prefs.limits(this@ObdService)).firstOrNull()?.level)
+                } else {
+                    overlay.hide()
+                }
+                if (AppState.overlayProblem != null && Prefs.overlay(this@ObdService)) Prefs.setOverlay(this@ObdService, false)
+                delay(500)
             }
         }
     }
@@ -147,6 +159,7 @@ class ObdService : Service() {
     override fun onDestroy() {
         ioScope.cancel()
         Speaker.shutdown()
+        overlay.hide()
         try {
             recorder?.finish(System.currentTimeMillis())
         } catch (e: Exception) {

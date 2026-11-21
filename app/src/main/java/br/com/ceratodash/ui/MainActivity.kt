@@ -4,6 +4,10 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -22,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import br.com.ceratodash.R
 import br.com.ceratodash.data.AlertLimits
+import br.com.ceratodash.data.AppState
 import br.com.ceratodash.data.Alerts
 import br.com.ceratodash.data.LiveCoach
 import br.com.ceratodash.data.Prefs
@@ -85,6 +90,16 @@ class MainActivity : AppCompatActivity() {
                 toast("Não consegui ler essa imagem. Use um arquivo PNG ou JPG.")
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        AppState.activityVisible = true
+    }
+
+    override fun onStop() {
+        AppState.activityVisible = false
+        super.onStop()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -187,7 +202,8 @@ class MainActivity : AppCompatActivity() {
             },
             { launchPhotoPicker() },
             { applyPrefs() },
-            { testVoice() }
+            { testVoice() },
+            { toggleOverlay() }
         )
         screens.add(dash)
         screens.add(telemetry)
@@ -224,6 +240,28 @@ class MainActivity : AppCompatActivity() {
         }
         Speaker.speak("Voz do CeratoDash funcionando.")
         if (!Speaker.ready) toast("Preparando a voz. Se não falar, toque em Testar voz de novo.")
+    }
+
+    /** Liga ou desliga a faixa sobre o mapa. Sem a permissão de sobreposição, tenta abrir a tela dela; se a central não tiver, avisa e não força. */
+    private fun toggleOverlay() {
+        if (Prefs.overlay(this)) {
+            Prefs.setOverlay(this, false)
+            AppState.overlayProblem = null
+            settings.refresh()
+            return
+        }
+        if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(this)) {
+            try {
+                startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                toast("Permita Sobrepor outros apps para o CeratoDash e volte para ligar a faixa.")
+            } catch (e: Exception) {
+                toast("Esta central não permite sobreposição. O app só abre o mapa e continua lendo em segundo plano.")
+            }
+            return
+        }
+        Prefs.setOverlay(this, true)
+        AppState.overlayProblem = null
+        settings.refresh()
     }
 
     private fun launchPhotoPicker() {
