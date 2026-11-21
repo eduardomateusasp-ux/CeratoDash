@@ -10,7 +10,9 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.os.SystemClock
+import android.view.MotionEvent
 import android.view.View
+import br.com.ceratodash.data.Hotspot
 import br.com.ceratodash.data.AlertLimits
 import br.com.ceratodash.obd.LiveHistory
 import br.com.ceratodash.obd.Telemetry
@@ -113,22 +115,27 @@ class DashboardView(context: Context) : View(context) {
     private val bodyShader = LinearGradient(
         0f, 5f, 0f, 27f, 0xFF3A444F.toInt(), 0xFF0E1216.toInt(), Shader.TileMode.CLAMP
     )
-    private val carBitmap: Bitmap? = loadCarPhoto()
+    private var carBitmap: Bitmap? = CarPhoto.load(context)
+    private val photoRect = RectF()
+    private val clip = Path()
+
+    /** A frente do carro na foto aponta para a esquerda? (espelha os pontos interativos) */
+    var facingLeft = true
+
+    /** Chamado quando o usuário toca num ponto interativo (só existem com foto). */
+    var onHotspot: ((Hotspot) -> Unit)? = null
+
+    /** Recarrega a foto (depois de escolher outra nos Ajustes). */
+    fun reloadPhoto() {
+        val old = carBitmap
+        carBitmap = CarPhoto.load(context)
+        old?.recycle()
+        invalidate()
+    }
 
     private class Card(val label: String, val value: String, val color: Int, val key: String?)
 
     private var cardList: List<Card> = cards()
-
-    private fun loadCarPhoto(): Bitmap? {
-        val id = resources.getIdentifier("car_photo", "drawable", context.packageName)
-        if (id == 0) return null
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeResource(resources, id, bounds)
-        var sample = 1
-        while (bounds.outWidth / sample > 1200) sample *= 2
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        return BitmapFactory.decodeResource(resources, id, opts)
-    }
 
     fun update(newT: Telemetry) {
         t = newT
@@ -267,10 +274,17 @@ class DashboardView(context: Context) : View(context) {
         val top = cy - carH / 2f - h * 0.02f
         val bmp = carBitmap
         if (bmp != null) {
-            val dw = carW * 1.15f
+            // Foto dentro de um cartão de cantos arredondados (a foto não tem fundo transparente).
+            val dw = carW * 1.1f
             val dh = dw * bmp.height / bmp.width
-            tmp.set(cx - dw / 2, cy - dh / 2, cx + dw / 2, cy + dh / 2)
-            c.drawBitmap(bmp, null, tmp, null)
+            photoRect.set(cx - dw / 2, cy - dh / 2, cx + dw / 2, cy + dh / 2)
+            clip.reset()
+            clip.addRoundRect(photoRect, context.dp(16).toFloat(), context.dp(16).toFloat(), Path.Direction.CW)
+            c.save()
+            c.clipPath(clip)
+            c.drawBitmap(bmp, null, photoRect, null)
+            c.restore()
+            drawHotspots(c)
         } else {
             c.save()
             c.translate(cx - carW / 2f, top)
@@ -313,8 +327,66 @@ class DashboardView(context: Context) : View(context) {
         text.typeface = Theme.bodyMedium
         text.textAlign = Paint.Align.CENTER
         text.textSize = maxOf(context.sp(Theme.LABEL), h * 0.035f)
-        c.drawText("Kia Cerato", cx, top + carH + h * 0.07f, text)
+        val labelY = if (bmp != null) photoRect.bottom + h * 0.05f else top + carH + h * 0.07f
+        c.drawText("Kia Cerato", cx, labelY, text)
     }
+
+    private fun hotspotX(hs: Hotspot): Float =
+        photoRect.left + photoRect.width() * (if (facingLeft) 1f - hs.x else hs.x)
+
+    private fun hotspotY(hs: Hotspot): Float = photoRect.top + photoRect.height() * hs.y
+
+    /** Anéis sobre o motor, a bateria e o escapamento. Tocar abre o dado correspondente. */
+    private fun drawHotspots(c: Canvas) {
+        val ring = context.dp(12).toFloat()
+        for (hs in Hotspot.values()) {
+            val x = hotspotX(hs)
+            val y = hotspotY(hs)
+            fill.color = withAlpha(Theme.BG, 170)
+            c.drawCircle(x, y, ring + context.dp(3), fill)
+            line.color = Theme.ACCENT
+            line.strokeWidth = context.dp(3).toFloat()
+            c.drawCircle(x, y, ring, line)
+            fill.color = Theme.ACCENT
+            c.drawCircle(x, y, ring * 0.35f, fill)
+            text.color = Theme.TEXT
+            text.typeface = Theme.bodyMedium
+            text.textAlign = Paint.Align.CENTER
+            text.textSize = context.sp(Theme.MIN_SIZE)
+            val tw = text.measureText(hs.title)
+            val ty = y + ring + context.dp(6) + text.textSize
+            fill.color = withAlpha(Theme.BG, 200)
+            tmp.set(x - tw / 2 - context.dp(6), ty - text.textSize, x + tw / 2 + context.dp(6), ty + context.dp(5))
+            c.drawRoundRect(tmp, context.dp(8).toFloat(), context.dp(8).toFloat(), fill)
+            c.drawText(hs.title, x, ty, text)
+        }
+    }
+
+    private fun hotspotAt(px: Float, py: Float): Hotspot? {
+        if (carBitmap == null) return null
+        val r = context.dp(36).toFloat()
+        for (hs in Hotspot.values()) {
+            val dx = px - hotspotX(hs)
+            val dy = py - hotspotY(hs)
+            if (dx * dx + dy * dy <= r * r) return hs
+        }
+        return null
+    }
+
+    override fun onTouchEvent(e: MotionEvent): Boolean {
+        val hs = hotspotAt(e.x, e.y)
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> return hs != null
+            MotionEvent.ACTION_UP -> if (hs != null) {
+                performClick()
+                onHotspot?.invoke(hs)
+                return true
+            }
+        }
+        return super.onTouchEvent(e)
+    }
+
+    override fun performClick(): Boolean = super.performClick()
 
     private val WHEELS = floatArrayOf(22f, 78f)
 

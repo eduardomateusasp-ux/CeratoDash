@@ -263,10 +263,13 @@ object ObdManager {
         val pidMisses = HashMap<String, Int>()
         val adapterVoltage = "42" !in supported
 
+        var lastCycleMs = 0L
         while (!s.closed) {
+            val cycleStart = System.currentTimeMillis()
             drainTasks(elm, null)
             var got = false
-            val batch = if (slow.isEmpty()) fast else fast + slow[idx++ % slow.size]
+            val perCycle = if (lastCycleMs > 450) 1 else 2
+            val batch = if (slow.isEmpty()) fast else fast + List(minOf(perCycle, slow.size)) { slow[idx++ % slow.size] }
             for (p in batch) {
                 val v = elm.query(p)
                 if (v != null) {
@@ -287,6 +290,7 @@ object ObdManager {
             }
             cycle++
             publish(s, Consumption.apply(t, fuel))
+            lastCycleMs = System.currentTimeMillis() - cycleStart
             // Cede a vez: mantém o laço cancelável mesmo se o adaptador responder instantaneamente.
             delay(1)
         }

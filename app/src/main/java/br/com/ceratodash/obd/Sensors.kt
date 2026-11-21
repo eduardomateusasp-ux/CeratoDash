@@ -26,6 +26,9 @@ object Sensors {
         Sensor("ambient", "Temperatura ambiente", "°C", 0) { it.ambient },
         Sensor("voltage", "Tensão", "V", 1) { it.voltage },
         Sensor("oilTemp", "Temperatura do óleo", "°C", 0) { it.oilTemp },
+        Sensor("o2b1s1", "Oxigênio antes do catalisador", "V", 2) { it.o2b1s1 },
+        Sensor("o2b1s2", "Oxigênio depois do catalisador", "V", 2) { it.o2b1s2 },
+        Sensor("catTemp", "Temperatura do catalisador", "°C", 0) { it.catTemp },
         Sensor("lph", "Consumo", "L/h", 1) { it.litersPerHour },
         Sensor("kml", "Consumo", "km/L", 1) { it.kmPerLiter }
     )

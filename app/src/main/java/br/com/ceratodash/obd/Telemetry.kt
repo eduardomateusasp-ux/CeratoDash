@@ -21,6 +21,9 @@ data class Telemetry(
     val ambient: Float? = null,
     val voltage: Float? = null,
     val oilTemp: Float? = null,
+    val o2b1s1: Float? = null,
+    val o2b1s2: Float? = null,
+    val catTemp: Float? = null,
     val litersPerHour: Float? = null,
     val kmPerLiter: Float? = null
 )

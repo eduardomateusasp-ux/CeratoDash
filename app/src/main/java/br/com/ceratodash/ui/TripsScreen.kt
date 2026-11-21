@@ -89,6 +89,11 @@ class TripsScreen(private val activity: AppCompatActivity) : LinearLayout(activi
         val avg = t.avgSpeed?.let { String.format("%.0f km/h", it) } ?: "--"
         val kml = t.kmPerLiter?.let { String.format("%.1f km/L", it) } ?: "--"
         c.addView(activity.label("Média: $avg    Máxima: ${String.format("%.0f", t.maxSpeed)} km/h    Consumo: $kml", 18f))
+        t.score?.let { sc ->
+            c.addView(
+                activity.label("Condução: nota $sc    ${t.events} eventos", 18f, if (sc >= 80) Theme.OK else if (sc >= 60) Theme.WARN else Theme.DANGER)
+            )
+        }
         return c
     }
 

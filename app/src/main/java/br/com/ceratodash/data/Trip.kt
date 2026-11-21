@@ -12,7 +12,10 @@ data class Trip(
     val maxSpeed: Float = 0f,
     /** Combustível gasto (L) e distância (km) medidos só enquanto o carro informava o fluxo de ar. */
     val fuelL: Double = 0.0,
-    val fuelDistKm: Double = 0.0
+    val fuelDistKm: Double = 0.0,
+    /** Nota de condução (0 a 100) e quantidade de eventos da viagem. Nula se a viagem é anterior à nota. */
+    val score: Int? = null,
+    val events: Int = 0
 ) {
     val durationMs: Long get() = endMs - startMs
 
@@ -38,6 +41,11 @@ interface TripStore {
  */
 class TripRecorder(
     private val store: TripStore,
+    /** Chamado quando uma viagem começa (o treinador de condução zera a contagem). */
+    private val onStart: () -> Unit = {},
+    /** Nota e eventos de condução da viagem em andamento. */
+    private val coach: () -> Pair<Int, Int>? = { null },
+    /** Último parâmetro de propósito: permite escrever TripRecorder(store) { trip -> ... }. */
     private val onChange: (Trip?) -> Unit = {}
 ) {
     companion object {
@@ -98,6 +106,7 @@ class TripRecorder(
 
     private fun begin(start: Long, now: Long) {
         val id = store.insert(start)
+        onStart()
         current = Trip(id = id, startMs = start, endMs = now)
         candidateSince = NONE
         lastRunning = now
@@ -114,6 +123,7 @@ class TripRecorder(
     }
 
     private fun save(ended: Boolean, now: Long) {
+        coach()?.let { (score, events) -> current = current?.copy(score = score, events = events) }
         current?.let { store.update(it, ended) }
         lastSave = now
     }

@@ -8,6 +8,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import br.com.ceratodash.data.AlertLimits
+import br.com.ceratodash.data.DrivingStyle
 import br.com.ceratodash.data.Prefs
 import br.com.ceratodash.obd.Fuel
 import br.com.ceratodash.obd.ObdManager
@@ -17,7 +18,10 @@ import br.com.ceratodash.service.ObdService
 class SettingsScreen(
     private val activity: AppCompatActivity,
     private val onPickAdapter: () -> Unit,
-    private val onLimitsChanged: (AlertLimits) -> Unit
+    private val onLimitsChanged: (AlertLimits) -> Unit,
+    private val onPickPhoto: () -> Unit,
+    /** Estilo de condução, limite de velocidade ou foto mudaram: a tela principal precisa reaplicar. */
+    private val onPrefsChanged: () -> Unit
 ) : ScrollView(activity) {
 
     private val box = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -100,6 +104,45 @@ class SettingsScreen(
         )
         alerts.addView(activity.label("Atenção a partir de ${lim.waterWarn} °C. Bateria: abaixo de 11,5 V ou acima de 15,2 V.", Theme.LABEL, Theme.MUTED))
 
+        val style = Prefs.coachStyle(activity)
+        val coach = card("Condução")
+        coach.addView(activity.label("Estilo do treinador de condução. Os limites são valores gerais de direção econômica, não da Kia.", Theme.LABEL, Theme.MUTED))
+        val styleButtons = DrivingStyle.values().map { s ->
+            activity.bigButton(s.label) {
+                Prefs.setCoachStyle(activity, s)
+                onPrefsChanged()
+                refresh()
+            }.also { it.stateStyle(activity, s == style) }
+        }
+        coach.addView(row(*styleButtons.toTypedArray()))
+        coach.addView(stepper("Limite de velocidade", "${Prefs.speedMax(activity)} km/h", { changeSpeed(-5) }, { changeSpeed(5) }))
+        coach.addView(activity.label("O app não tem GPS: o limite de velocidade é o que você escolher aqui, não o da via.", Theme.LABEL, Theme.MUTED))
+
+        val photo = card("Foto do carro")
+        photo.addView(activity.label(if (CarPhoto.hasUserPhoto(activity)) "Usando a foto que você escolheu." else "Usando a foto padrão do app.", Theme.TEXT_SIZE, Theme.TEXT))
+        photo.addView(
+            row(
+                activity.bigButton("Escolher foto") { onPickPhoto() },
+                activity.bigButton("Voltar à foto padrão") {
+                    CarPhoto.clear(activity)
+                    onPrefsChanged()
+                    refresh()
+                }
+            )
+        )
+        val left = Prefs.carFacingLeft(activity)
+        photo.addView(
+            row(
+                activity.bigButton(if (left) "Frente do carro na foto: esquerda" else "Frente do carro na foto: direita") {
+                    Prefs.setCarFacingLeft(activity, !left)
+                    onPrefsChanged()
+                    refresh()
+                }
+            )
+        )
+        photo.addView(activity.label("Use um PNG ou JPG em vista lateral. Os pontos de motor, bateria e escapamento seguem a posição da frente do carro.", Theme.LABEL, Theme.MUTED))
+        photo.addView(activity.label("Foto padrão: Kia Cerato 1.6 SX 2010, de order_242 (Wikimedia Commons), licença CC BY-SA 2.0.", Theme.LABEL, Theme.MUTED))
+
         val sys = card("Sistema")
         val on = Prefs.autostart(activity)
         sys.addView(activity.label("Iniciar a leitura junto com a central. Só o serviço sobe; abra o app para ver o painel.", Theme.LABEL, Theme.MUTED))
@@ -119,6 +162,12 @@ class SettingsScreen(
 
     private fun reconnect() {
         if (Prefs.adapter(activity) != null) ObdService.start(activity)
+    }
+
+    private fun changeSpeed(delta: Int) {
+        Prefs.setSpeedMax(activity, (Prefs.speedMax(activity) + delta).coerceIn(60, 180))
+        onPrefsChanged()
+        refresh()
     }
 
     private fun change(rpm: Int = 0, water: Int = 0) {

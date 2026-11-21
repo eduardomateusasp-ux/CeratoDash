@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
 /** Banco local das viagens (SQLite puro, sem Room, para manter o app leve). Nada sai do aparelho. */
-class TripDb private constructor(ctx: Context) : SQLiteOpenHelper(ctx, "viagens.db", null, 1), TripStore {
+class TripDb private constructor(ctx: Context) : SQLiteOpenHelper(ctx, "viagens.db", null, 2), TripStore {
 
     companion object {
         @Volatile private var instance: TripDb? = null
@@ -28,11 +28,18 @@ class TripDb private constructor(ctx: Context) : SQLiteOpenHelper(ctx, "viagens.
                 "distance_km REAL NOT NULL DEFAULT 0, " +
                 "max_speed REAL NOT NULL DEFAULT 0, " +
                 "fuel_l REAL NOT NULL DEFAULT 0, " +
-                "fuel_dist_km REAL NOT NULL DEFAULT 0)"
+                "fuel_dist_km REAL NOT NULL DEFAULT 0, " +
+                "score INTEGER, " +
+                "events INTEGER NOT NULL DEFAULT 0)"
         )
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE trips ADD COLUMN score INTEGER")
+            db.execSQL("ALTER TABLE trips ADD COLUMN events INTEGER NOT NULL DEFAULT 0")
+        }
+    }
 
     override fun insert(startMs: Long): Long {
         val v = ContentValues().apply {
@@ -52,6 +59,8 @@ class TripDb private constructor(ctx: Context) : SQLiteOpenHelper(ctx, "viagens.
             put("max_speed", trip.maxSpeed.toDouble())
             put("fuel_l", trip.fuelL)
             put("fuel_dist_km", trip.fuelDistKm)
+            if (trip.score != null) put("score", trip.score) else putNull("score")
+            put("events", trip.events)
         }
         writableDatabase.update("trips", v, "id = ?", arrayOf(trip.id.toString()))
     }
@@ -75,7 +84,9 @@ class TripDb private constructor(ctx: Context) : SQLiteOpenHelper(ctx, "viagens.
                         distanceKm = c.getDouble(c.getColumnIndexOrThrow("distance_km")),
                         maxSpeed = c.getFloat(c.getColumnIndexOrThrow("max_speed")),
                         fuelL = c.getDouble(c.getColumnIndexOrThrow("fuel_l")),
-                        fuelDistKm = c.getDouble(c.getColumnIndexOrThrow("fuel_dist_km"))
+                        fuelDistKm = c.getDouble(c.getColumnIndexOrThrow("fuel_dist_km")),
+                        score = c.getColumnIndexOrThrow("score").let { i -> if (c.isNull(i)) null else c.getInt(i) },
+                        events = c.getInt(c.getColumnIndexOrThrow("events"))
                     )
                 )
             }

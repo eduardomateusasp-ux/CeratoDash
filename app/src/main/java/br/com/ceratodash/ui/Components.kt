@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import br.com.ceratodash.R
 import br.com.ceratodash.data.Alert
+import br.com.ceratodash.data.DriveEvent
 import br.com.ceratodash.data.Level
 import br.com.ceratodash.obd.ConnState
 import br.com.ceratodash.obd.ObdStatus
@@ -81,5 +82,40 @@ class StatusIndicator(context: Context) : LinearLayout(context) {
         }
         (dot.background as GradientDrawable).setColor(color)
         text.text = if (s.message.isBlank()) s.state.label else "${s.state.label}: ${s.message}"
+    }
+}
+
+/** Dica curta de condução, por alguns segundos. Texto grande e direto: não exige atenção prolongada. */
+class CoachBanner(context: Context) : LinearLayout(context) {
+    private val msg = TextView(context).apply {
+        textSize = 20f
+        typeface = Theme.numBold
+        setTextColor(Theme.TEXT)
+    }
+    private var shown: DriveEvent? = null
+
+    init {
+        orientation = HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setBackgroundColor(Theme.HIGH)
+        setPadding(context.dp(24), context.dp(8), context.dp(24), context.dp(8))
+        val icon = ImageView(context)
+        icon.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_nav_conducao)?.mutate()?.apply { setTint(Theme.INFO) })
+        addView(icon, LayoutParams(context.dp(32), context.dp(32)).apply { rightMargin = context.dp(12) })
+        addView(msg, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
+        visibility = GONE
+    }
+
+    fun show(tip: DriveEvent?) {
+        if (tip == null) {
+            if (visibility != GONE) visibility = GONE
+            shown = null
+            return
+        }
+        if (tip != shown) {
+            shown = tip
+            msg.text = tip.tip
+        }
+        if (visibility != VISIBLE) visibility = VISIBLE
     }
 }

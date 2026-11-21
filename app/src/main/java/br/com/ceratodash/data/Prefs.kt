@@ -33,6 +33,16 @@ object Prefs {
     fun setRpmMax(c: Context, v: Int) = sp(c).edit().putInt("rpmMax", v).apply()
     fun setWaterDanger(c: Context, v: Int) = sp(c).edit().putInt("waterDanger", v).apply()
 
+    /** Estilo de condução do treinador e limite de velocidade escolhido pelo motorista (sem GPS, o app não sabe o limite da via). */
+    fun coachStyle(c: Context): DrivingStyle = DrivingStyle.values().getOrElse(sp(c).getInt("coachStyle", 1)) { DrivingStyle.EQUILIBRADA }
+    fun setCoachStyle(c: Context, s: DrivingStyle) = sp(c).edit().putInt("coachStyle", s.ordinal).apply()
+    fun speedMax(c: Context): Int = sp(c).getInt("speedMax", 110)
+    fun setSpeedMax(c: Context, v: Int) = sp(c).edit().putInt("speedMax", v).apply()
+
+    /** A frente do carro na foto aponta para a esquerda? Espelha a posição dos pontos interativos. A foto incluída no app tem a frente para a esquerda, por isso o padrão é sim. */
+    fun carFacingLeft(c: Context): Boolean = sp(c).getBoolean("carLeft", true)
+    fun setCarFacingLeft(c: Context, v: Boolean) = sp(c).edit().putBoolean("carLeft", v).apply()
+
     /** Iniciar a leitura junto com o sistema da central. Desligado por padrão. */
     fun autostart(c: Context): Boolean = sp(c).getBoolean("autostart", false)
     fun setAutostart(c: Context, on: Boolean) = sp(c).edit().putBoolean("autostart", on).apply()

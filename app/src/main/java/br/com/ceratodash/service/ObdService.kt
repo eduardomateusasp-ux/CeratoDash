@@ -76,10 +76,16 @@ class ObdService : Service() {
     /** Amostra a telemetria a cada 500 ms para o histórico dos gráficos e para as viagens. */
     private fun startRecording() {
         val db = TripDb.get(this)
-        val rec = TripRecorder(db) { trip ->
-            TripLive.current.value = trip
-            if (trip == null) TripLive.version.value += 1
-        }
+        LiveCoach.applySettings(Prefs.coachStyle(this), Prefs.speedMax(this))
+        val rec = TripRecorder(
+            db,
+            onChange = { trip ->
+                TripLive.current.value = trip
+                if (trip == null) TripLive.version.value += 1
+            },
+            onStart = { LiveCoach.coach.reset() },
+            coach = { LiveCoach.snapshot.value.let { it.score to it.events } }
+        )
         recorder = rec
         ioScope.launch {
             // Viagem que ficou aberta porque o app foi encerrado de repente.
@@ -98,6 +104,9 @@ class ObdService : Service() {
                     // Falha no banco não pode derrubar a leitura do carro.
                 }
                 LiveHistory.history.add(now, t)
+                // O treinador de condução usa a mesma amostra; a interface recebe o resumo.
+                LiveCoach.coach.onSample(now, t)
+                LiveCoach.snapshot.value = LiveCoach.coach.snapshot(now)
             }
         }
     }

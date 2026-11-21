@@ -33,7 +33,12 @@ object Pids {
         Pid("2F", 1, { it[0] * 100f / 255f }, { t, v -> t.copy(fuelLevel = v) }),
         Pid("46", 1, { it[0] - 40f }, { t, v -> t.copy(ambient = v) }),
         Pid("42", 2, { (it[0] * 256 + it[1]) / 1000f }, { t, v -> t.copy(voltage = v) }),
-        Pid("5C", 1, { it[0] - 40f }, { t, v -> t.copy(oilTemp = v) })
+        Pid("5C", 1, { it[0] - 40f }, { t, v -> t.copy(oilTemp = v) }),
+        // SAE J1979: 14 e 15 = tensão do sensor de oxigênio (banco 1, sensores 1 e 2) = A / 200 volts.
+        Pid("14", 2, { it[0] / 200f }, { t, v -> t.copy(o2b1s1 = v) }),
+        Pid("15", 2, { it[0] / 200f }, { t, v -> t.copy(o2b1s2 = v) }),
+        // SAE J1979: 3C = temperatura do catalisador (banco 1, sensor 1) = (256A + B) / 10 - 40 °C.
+        Pid("3C", 2, { (it[0] * 256 + it[1]) / 10f - 40f }, { t, v -> t.copy(catTemp = v) })
     )
 
     fun byCode(code: String): Pid? = all.firstOrNull { it.code == code }
