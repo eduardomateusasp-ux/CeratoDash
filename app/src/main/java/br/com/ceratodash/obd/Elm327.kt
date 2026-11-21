@@ -179,7 +179,7 @@ class Elm327(private val input: InputStream, private val output: OutputStream) {
         val can = isCan()
         val resp = send("03", 8000)
         if (!temRespostaPositiva(resp, "43")) {
-            throw IOException(explain(resp) ?: "O carro não respondeu à leitura de códigos.")
+            throw IOException(motivo(resp, "O carro não respondeu à leitura de códigos."))
         }
         return parseDtcs(resp, can)
     }
@@ -188,9 +188,13 @@ class Elm327(private val input: InputStream, private val output: OutputStream) {
     fun clearDtcs() {
         val resp = send("04", 8000)
         if (!temRespostaPositiva(resp, "44")) {
-            throw IOException(explain(resp) ?: "O carro não confirmou a limpeza dos códigos.")
+            throw IOException(motivo(resp, "O carro não confirmou a limpeza dos códigos."))
         }
     }
+
+    /** Mensagem de erro de um comando de diagnóstico; "NO DATA" aqui não é sobre um sensor. */
+    private fun motivo(resp: String, padrao: String): String =
+        if ("NO DATA" in resp.uppercase()) padrao else explain(resp) ?: padrao
 
     /** Tensão medida pelo próprio adaptador (ATRV). */
     fun voltage(): Float? {

@@ -19,7 +19,21 @@ jobs:
         with:
           gradle-version: "8.9"
       - name: Testes unitários
-        run: gradle testDebugUnitTest --no-daemon
+        shell: bash
+        run: |
+          set +e
+          gradle testDebugUnitTest --no-daemon > gradle-test.log 2>&1
+          code=$?
+          tail -n 40 gradle-test.log
+          exit $code
+      - name: Resumo dos erros nos testes
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          # Publica os erros como anotações (visíveis na página da execução, sem baixar log).
+          grep -E "^e: |error:|FAILED|AssertionError|Exception|Test.*>" gradle-test.log | head -n 30 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
       - name: Compilar
         if: ${{ !cancelled() }}
         run: gradle assembleRelease --no-daemon
@@ -31,6 +45,8 @@ jobs:
           path: app/build/reports/tests/
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: CeratoDash-apk
           path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: ignore
