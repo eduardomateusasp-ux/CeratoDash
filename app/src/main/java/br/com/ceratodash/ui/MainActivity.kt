@@ -220,7 +220,8 @@ class MainActivity : AppCompatActivity() {
             { toggleOverlay() },
             { searchAdapter() },
             { search.openManual() },
-            { LogDialog.show(this) }
+            { LogDialog.show(this) },
+            { UsbDialog.show(this) }
         )
         screens.add(dash)
         screens.add(telemetry)
