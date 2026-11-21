@@ -46,7 +46,7 @@ Fontes embutidas no APK (`res/font`), sem baixar da internet. Licença SIL OFL 1
 Escala (em sp, definida em `Theme`): valor principal 96, secundário 40, rótulo 16, texto 18, mínimo 14. Nada abaixo de 14 sp. O valor de 96 sp dos gauges é reduzido automaticamente só se não couber dentro do arco (a resolução da central é desconhecida).
 
 ## Layout
-Paisagem. Margens de 24 dp, cantos de 16 dp, espaçamentos múltiplos de 4 e 8 dp. Painel em três zonas: conta-giros à esquerda, carro e barra de rotação ao centro, velocímetro à direita, cartões de métrica embaixo. Navegação lateral de 104 dp de largura com ícone e rótulo; cada item tem no mínimo 64 dp de altura.
+Paisagem. Margens de 24 dp, cantos de 16 dp, espaçamentos múltiplos de 4 e 8 dp. Painel em três zonas: conta-giros à esquerda (gauges com raio de 15% da largura), carro e barra de rotação ao centro, velocímetro à direita, cartões de métrica embaixo. A foto do carro fica entre os gauges, sem sobreposição. Navegação lateral de 104 dp de largura com ícone e rótulo; cada item tem no mínimo 64 dp de altura.
 
 ## Componentes
 | Componente | Onde | Observações |
@@ -58,7 +58,11 @@ Paisagem. Margens de 24 dp, cantos de 16 dp, espaçamentos múltiplos de 4 e 8 d
 | Indicador de status | `StatusIndicator` | ponto colorido mais texto |
 | Faixa de alerta | `AlertBanner` | no topo de todas as telas; ícone mais texto, nunca só a cor |
 | Botão grande | `bigButton` | mínimo de 56 dp; estados normal, pressionado (borda azul) e desabilitado; opção escolhida com borda azul |
-| Navegação lateral | `MainActivity` | ícones vetoriais próprios (`ic_nav_*`) |
+| Navegação lateral | `MainActivity` | ícones vetoriais próprios (`ic_nav_*`); rola se a tela for baixa |
+| Faixa de dica de condução | `CoachBanner` | abaixo da faixa de alerta; texto curto por 5 s |
+| Painel de pontos do carro | `HotspotPanel` | abre ao tocar no anel de motor, bateria ou escapamento |
+| Faixa sobre o mapa | `OverlayStrip` | rotação, velocidade e água sobre outros apps; opcional, sem toque |
+| Foto do carro | `CarPhoto` | em cartão arredondado; escolhida em Ajustes ou a padrão do APK |
 
 ## Alertas
 Regras em `data/Alerts.kt`, com testes. Visuais, sem som.
@@ -67,6 +71,9 @@ Regras em `data/Alerts.kt`, com testes. Visuais, sem som.
 - Tensão: perigo abaixo de 11,5 V ou acima de 15,2 V.
 - Rotação: perigo acima do limite configurado (padrão 6500 rpm, de 4000 a 8000).
 - Sensor sem resposta nunca gera alerta.
+
+## Voz
+Opcional e desligada por padrão. Usa o mecanismo de voz do Android (precisa de voz em português instalada). Alertas: uma vez por episódio; perigo repete a cada 30 s. Dicas de condução: no máximo uma a cada 8 s, sempre abaixo dos alertas em prioridade. O volume da música abaixa enquanto fala. A voz nunca substitui o alerta visual.
 
 ## Movimento
 Ponteiro suave: cerca de 95% do caminho em 150 ms, independente da taxa de quadros. Transição entre telas: fade de 150 ms. Máximo de 30 quadros por segundo (`postInvalidateDelayed(33)`). Sem animação contínua fora dos gauges e da barra de rotação perto do limite.
