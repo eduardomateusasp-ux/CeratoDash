@@ -11,7 +11,7 @@ Se o que você quer é só usar mapas na central, o mais simples é instalar nel
 - **OsmAnd**: também offline e completo, mas a versão gratuita limita a quantidade de mapas baixados (as fontes que achei divergem sobre o limite; confira no próprio app). Não conferi o pacote nem os requisitos da versão para central.
 
 O que você precisa:
-1. **GPS na central.** Sem GPS não há posição, e nenhum app de navegação funciona direito. O Diagnóstico da central (Ajustes) mostra se ela declara ter GPS. Atenção: muitas centrais só têm GPS se uma antena estiver ligada, e o Diagnóstico não consegue saber isso.
+1. **GPS na central.** Sem GPS não há posição, e nenhum app de navegação funciona direito. O Diagnóstico da central (Ajustes) mostra se ela declara ter GPS, mas declarar não prova que funciona: muitas centrais só têm GPS se uma antena estiver ligada. Use **Testar GPS** (Ajustes, ao ar livre): ele mostra os satélites vistos e se a central obteve posição.
 2. **Internet uma vez, para baixar os mapas** do seu estado ou região (não precisa do país todo, que é grande). Use o ponto de acesso do iPhone, se a central tiver Wi-Fi. Depois disso, o mapa funciona sem internet.
 3. Instalar o APK pelo pendrive.
 

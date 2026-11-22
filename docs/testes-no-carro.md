@@ -26,12 +26,25 @@ Ajustes, Diagnóstico da central, **Ver diagnóstico da central**. Fotografe a t
 | Memória livre / total | ___ MB / ___ MB | |
 | Bluetooth LE (BLE) | sim / não | |
 | Wi-Fi no aparelho | sim / não | |
-| GPS no aparelho | sim / não | |
+| GPS no aparelho (só declara; não prova que funciona) | sim / não | |
 | USB como anfitrião | sim / não | |
 | Play Store instalada | sim / não | |
 | Google Maps instalado | sim / não | |
 | Waze instalado | sim / não | |
 | Apps de espelhamento ou CarPlay encontrados | (anote os nomes) | |
+
+### A1b. Teste de GPS (ao ar livre, de preferência com o carro fora da garagem)
+Ajustes, Diagnóstico da central, **Testar GPS** (aceite a permissão de localização). Espere até 2 minutos.
+
+| Item | Resultado | Anotações |
+|---|---|---|
+| A central tem provedor de GPS e a localização está ligada | sim / não | |
+| Satélites vistos / usados | ___ / ___ | |
+| Obteve posição (precisão em metros) | sim / não, ___ m | |
+| Tempo até a primeira posição | ___ s | |
+| Resultado dito pela tela (copie a última frase) | | |
+
+Se nenhum satélite aparecer em 1 minuto ao ar livre, a antena de GPS da central pode estar desligada, mal posicionada ou ausente. Sem GPS, o mapa offline (D0) não funciona.
 
 ### A2. USB com o iPhone no cabo
 Ligue o iPhone no cabo da central. Ajustes, **Ver USB**, Atualizar.

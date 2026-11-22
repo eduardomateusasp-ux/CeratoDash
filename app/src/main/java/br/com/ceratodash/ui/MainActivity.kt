@@ -85,11 +85,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var search: AdapterSearch
 
+    /** O que fazer quando a permissão de localização for concedida (busca BLE ou teste de GPS). */
+    private var pendingLocationAction: (() -> Unit)? = null
+
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val action = pendingLocationAction
+        pendingLocationAction = null
         if (granted) {
-            startSearch()
+            action?.invoke()
         } else {
-            toast("Sem a permissão de localização a busca BLE não funciona. Use Digitar endereço.")
+            toast("Sem a permissão de localização esta função não funciona. Para achar o adaptador, use Digitar endereço.")
         }
     }
 
@@ -222,7 +227,8 @@ class MainActivity : AppCompatActivity() {
             { search.openManual() },
             { LogDialog.show(this) },
             { UsbDialog.show(this) },
-            { DeviceDialog.show(this) }
+            { DeviceDialog.show(this) },
+            { testGps() }
         )
         screens.add(dash)
         screens.add(telemetry)
@@ -283,10 +289,21 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            pendingLocationAction = { startSearch() }
             locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             return
         }
         startSearch()
+    }
+
+    /** Teste de GPS: pede a permissão de localização se ainda não houver e abre o teste. */
+    private fun testGps() {
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            pendingLocationAction = { GpsDialog.show(this) }
+            locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            return
+        }
+        GpsDialog.show(this)
     }
 
     private fun startSearch() {

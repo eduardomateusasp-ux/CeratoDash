@@ -1,6 +1,6 @@
 # CeratoDash: requisitos do produto (PRD)
 
-Versão do app: 0.9.1. Atualizado em 22/11/2026.
+Versão do app: 0.9.2. Atualizado em 22/11/2026.
 
 **Regra de leitura:** "Feito" quer dizer implementado e, quando possível, coberto por testes automáticos com um ELM327 simulado. **Só um teste no carro foi feito (relato do dono, sem detalhes):** o app conectou por Bluetooth clássico, respondeu bem, ficou leve, sem travar, e mostrou informações corretas. Todo o resto que depende do carro ou da central está marcado como não testado.
 

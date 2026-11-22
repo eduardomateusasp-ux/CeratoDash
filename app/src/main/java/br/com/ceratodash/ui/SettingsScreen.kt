@@ -29,7 +29,8 @@ class SettingsScreen(
     private val onManualAddress: () -> Unit,
     private val onShowLog: () -> Unit,
     private val onShowUsb: () -> Unit,
-    private val onShowDevice: () -> Unit
+    private val onShowDevice: () -> Unit,
+    private val onTestGps: () -> Unit
 ) : ScrollView(activity) {
 
     private val box = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -190,7 +191,7 @@ class SettingsScreen(
 
         val usb = card("Diagnóstico da central")
         usb.addView(activity.label("Mostra o que a central tem (Wi-Fi, GPS, Bluetooth LE, USB, Play Store, Maps, apps de espelhamento) e o que isso permite. Ver USB lista o que a porta enxerga com o celular ligado no cabo.", Theme.LABEL, Theme.MUTED))
-        usb.addView(row(activity.bigButton("Ver diagnóstico da central") { onShowDevice() }, activity.bigButton("Ver USB") { onShowUsb() }))
+        usb.addView(row(activity.bigButton("Ver diagnóstico da central") { onShowDevice() }, activity.bigButton("Testar GPS") { onTestGps() }, activity.bigButton("Ver USB") { onShowUsb() }))
 
         val sys = card("Sistema")
         val on = Prefs.autostart(activity)

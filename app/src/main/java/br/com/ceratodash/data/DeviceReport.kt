@@ -93,6 +93,7 @@ object DeviceReport {
             }
         )
         if ((maps || store) && !i.gpsFeature) out.add("Atenção: sem GPS na central, Maps e Waze nela teriam posição ruim.")
+        if (i.gpsFeature) out.add("O aparelho declara ter GPS, mas isso não prova que funciona (a antena pode estar desligada). Use Testar GPS, ao ar livre.")
         return out
     }
 }
