@@ -1,8 +1,8 @@
 # CeratoDash: requisitos do produto (PRD)
 
-Versão do app: 0.8.0. Atualizado em 21/11/2026.
+Versão do app: 0.9.0. Atualizado em 22/11/2026.
 
-**Regra de leitura:** "Feito" quer dizer implementado e, quando possível, coberto por testes automáticos com um ELM327 simulado. **Nada foi testado no carro ainda.** Tudo que depende do Bluetooth real, da central ou do carro está marcado como não testado.
+**Regra de leitura:** "Feito" quer dizer implementado e, quando possível, coberto por testes automáticos com um ELM327 simulado. **Só um teste no carro foi feito (relato do dono, sem detalhes):** o app conectou por Bluetooth clássico, respondeu bem, ficou leve, sem travar, e mostrou informações corretas. Todo o resto que depende do carro ou da central está marcado como não testado.
 
 ## 1. Produto
 Painel de telemetria OBDII, esportivo e interativo, para a central multimídia Android do Kia Cerato 2010/2011 SX2 1.6 automático.
@@ -18,18 +18,18 @@ Painel de telemetria OBDII, esportivo e interativo, para a central multimídia A
 ### 2.1 Conexão OBDII
 | Requisito | Estado | Observação |
 |---|---|---|
-| Escolher o adaptador (entre os pareados, por busca BLE ou por endereço) e guardar | Feito | Não testado no carro |
+| Escolher o adaptador (entre os pareados, por busca BLE ou por endereço) e guardar | Feito | Testado no carro: conectou (adaptador clássico pareado pela central) |
 | Inicializar o ELM327 (ATZ, ATE0, ATL0, ATS0, ATH0, ATSP0) e descobrir os PIDs | Feito | Testado só com adaptador simulado |
 | Reconexão automática, status sempre visível, mensagens claras | Feito | Tenta de novo a cada 3 s. Não testado no carro |
 | Tolerar quedas; tratar NO DATA, UNABLE TO CONNECT, SEARCHING, BUS INIT e várias ECUs | Feito | Também CAN ERROR, BUS BUSY, LV RESET e STOPPED. Testado só em simulação |
 | Bluetooth clássico (SPP) e BLE | Feito | BLE com busca dentro do app, ou endereço digitado, sem exigir pareamento. Nunca testado em adaptador real. Depende de a central ter Bluetooth LE |
-| Serviço em primeiro plano, com notificação discreta | Feito | Não testado na central |
+| Serviço em primeiro plano, com notificação discreta | Feito | Em uso no primeiro teste; a notificação não foi conferida em detalhe |
 | Iniciar com o sistema (BOOT_COMPLETED), opção desligada por padrão | Feito | Só o serviço sobe; a tela precisa ser aberta. Não testado |
 
 ### 2.2 Dados em tempo real (somente OBD-II padrão, só o que o carro responder)
 | Requisito | Estado | Observação |
 |---|---|---|
-| Rotação, velocidade, água, admissão, carga, borboleta, coletor, MAF, avanço, correções curta e longa, combustível, ambiente, tensão da ECU, óleo, tensão do adaptador | Feito | Fórmulas SAE J1979, testadas |
+| Rotação, velocidade, água, admissão, carga, borboleta, coletor, MAF, avanço, correções curta e longa, combustível, ambiente, tensão da ECU, óleo, tensão do adaptador | Feito | Fórmulas SAE J1979, testadas. No carro, o dono relata informações corretas (quais sensores o carro responde ainda não foi listado) |
 | Sensores extras: oxigênio antes e depois do catalisador (14, 15) e temperatura do catalisador (3C) | Feito | Para o ponto do escapamento. SAE J1979 |
 | Consumo estimado pelo MAF (L/h e km/L), gasolina ou etanol | Feito | Sem MAF mostra "--" |
 | Rotação e velocidade em todo ciclo; demais em rodízio | Feito | Dois sensores lentos por ciclo (um se o adaptador for lento) |
@@ -73,7 +73,8 @@ Painel de telemetria OBDII, esportivo e interativo, para a central multimídia A
 |---|---|
 | Treinador de condução em tempo real (8 itens, 3 estilos, nota da viagem) | Feito. Limites são valores gerais de direção econômica, não da Kia; precisam de calibração |
 | Voz nas dicas de condução (opcional) | Feito |
-| Espelhar o celular na central | Não feito. Seria um projeto à parte (app no celular e decodificação de vídeo na central) |
+| Diagnóstico da central (Wi-Fi, GPS, BLE, USB, apps), Ver USB e registro da conexão | Feito. Servem para decidir mapas e espelhamento e para diagnosticar falhas. Não testados |
+| Espelhar o celular na central | Não feito. O celular é iPhone, então não há app próprio possível. Caminhos em `docs/espelhamento.md` (Maps ou Waze na central, receptor AirPlay, adaptador de CarPlay) |
 
 ## 3. Requisitos não funcionais
 | Requisito | Estado | Observação |
@@ -83,6 +84,7 @@ Painel de telemetria OBDII, esportivo e interativo, para a central multimídia A
 | Tela sempre ligada com o painel aberto, paisagem, barra de navegação visível | Feito | |
 | Rodar 1 hora sem travar nem fechar | Não testado | |
 | Dados de viagem só no aparelho; sem telemetria nem envio para fora | Feito | |
+| App leve e sem travar | Relato do dono no primeiro teste | Sem medição de memória nem de quadros |
 | Leve: 30 fps no máximo, sem imagens grandes | Feito | Foto reduzida a 1200 px de largura; fontes embutidas (cerca de 1,6 MB) |
 
 ## 4. Design system

@@ -2,7 +2,7 @@
 
 Painel de telemetria OBDII para a central multimídia Android do Kia Cerato 2010/2011 SX2 1.6 automático. Lê o carro por um adaptador ELM327 Bluetooth e mostra rotação, velocidade, temperaturas, bateria, carga, borboleta e consumo estimado, com gráficos, diagnóstico, viagens e um treinador de condução. Funciona 100% sem internet.
 
-**Estado: versão 0.8.0, ainda não testada no carro.** Os testes automáticos (103) rodam com um adaptador simulado. Veja `docs/PRD.md` para o que está feito e o que falta, e `docs/testes-no-carro.md` para o roteiro de testes que você vai fazer.
+**Estado: versão 0.9.0.** No primeiro teste no carro (relato do dono), o app conectou por Bluetooth clássico, respondeu bem, ficou leve, sem travar, e mostrou informações corretas. O resto ainda não foi testado no carro. Os testes automáticos (128) rodam com um adaptador simulado. Veja `docs/PRD.md` para o que está feito e o que falta, e `docs/testes-no-carro.md` para o roteiro único de testes.
 
 ## Telas
 Painel, Telemetria, Condução, Diagnóstico, Viagens, Mapas e Ajustes, numa barra lateral. Alertas visuais no topo (com voz opcional), dicas de condução e foto do carro com pontos interativos (motor, bateria e escapamento).
@@ -60,8 +60,14 @@ Em Ajustes, Voz: ligue a voz nos alertas e, separadamente, nas dicas de conduç�
 ## Faixa sobre o Maps e o Waze
 Em Ajustes, Mapas: ligue a faixa para ver rotação, velocidade e água sobre o mapa. Ela precisa da permissão Sobrepor outros apps, que a central pode não oferecer. Se não oferecer, o app só abre o mapa e continua lendo em segundo plano. Desligada por padrão.
 
+## Diagnóstico da central e USB
+Em Ajustes, **Ver diagnóstico da central** mostra de uma vez o Android, a memória, o Wi-Fi, o GPS, o Bluetooth LE, o USB, a Play Store, o Maps, o Waze e apps de espelhamento instalados, e o que isso permite. **Ver USB** lista o que a porta enxerga com o celular no cabo. **Ver registro da conexão** mostra cada etapa da conexão com o adaptador, para diagnosticar falhas. Nada disso sai do aparelho.
+
+## Maps e espelhamento com iPhone
+A central não tem CarPlay e o celular é iPhone. O app não tem espelhamento próprio. Veja `docs/espelhamento.md` para os caminhos possíveis (Maps ou Waze na central, receptor AirPlay, adaptador de CarPlay) e como escolher.
+
 ## Limitações conhecidas
-- **Nada foi testado no carro.** Bluetooth real, reconexão, serviço em primeiro plano, BLE, voz, faixa sobre o mapa e uso de uma hora são incógnitas.
+- **Só a conexão clássica foi testada no carro.** Reconexão, BLE, voz, faixa sobre o mapa, viagens, condução, USB, espelhamento e uso de uma hora ainda são incógnitas.
 - Só sensores OBD-II padrão. O app pergunta ao carro quais ele responde e mostra apenas esses. Sem resposta, "--".
 - O consumo (km/L) só aparece se o carro informar o fluxo de ar (MAF), e é uma estimativa.
 - A distância das viagens vem da velocidade do OBD (sem GPS), então tem pequena imprecisão.
@@ -78,7 +84,7 @@ Em Ajustes, Mapas: ligue a faixa para ver rotação, velocidade e água sobre o 
 - `.../service`: serviço em primeiro plano, voz, faixa sobre o mapa, início com o sistema.
 - `.../ui`: telas e componentes (Views e Canvas, sem Compose).
 - `app/src/test`: testes unitários com ELM327 simulado.
-- `docs/`: PRD, design system, roteiro de testes no carro, assinatura, avaliação do mapa offline, licenças.
+- `docs/`: PRD, design system, roteiro único de testes, espelhamento, assinatura, avaliação do mapa offline, licenças.
 
 ## Créditos e licenças
 Fontes Rajdhani e Inter (licença OFL, em `docs/licencas/`) e a foto padrão (CC BY-SA 2.0, `docs/licencas/foto-do-carro.md`). Sem telemetria, sem análise de uso e sem envio de dados para fora do aparelho.

@@ -15,8 +15,8 @@ android {
         // targetSdk 30: no Android 12 da central, as permissões Bluetooth antigas
         // continuam valendo, sem pedir autorização em tempo de execução.
         targetSdk = 30
-        versionCode = 9
-        versionName = "0.8.1"
+        versionCode = 10
+        versionName = "0.9.0"
     }
 
     // Assinatura de release. A keystore NUNCA fica no repositório:

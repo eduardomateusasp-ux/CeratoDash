@@ -28,7 +28,8 @@ class SettingsScreen(
     private val onSearchAdapter: () -> Unit,
     private val onManualAddress: () -> Unit,
     private val onShowLog: () -> Unit,
-    private val onShowUsb: () -> Unit
+    private val onShowUsb: () -> Unit,
+    private val onShowDevice: () -> Unit
 ) : ScrollView(activity) {
 
     private val box = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
@@ -187,9 +188,9 @@ class SettingsScreen(
         )
         AppState.overlayProblem?.let { maps.addView(activity.label(it, Theme.LABEL, Theme.DANGER)) }
 
-        val usb = card("Cabo USB (teste)")
-        usb.addView(activity.label("Mostra o que a porta USB da central enxerga. Serve para avaliar um possível espelhamento do celular por cabo. Ligue o celular no cabo antes.", Theme.LABEL, Theme.MUTED))
-        usb.addView(row(activity.bigButton("Ver USB") { onShowUsb() }))
+        val usb = card("Diagnóstico da central")
+        usb.addView(activity.label("Mostra o que a central tem (Wi-Fi, GPS, Bluetooth LE, USB, Play Store, Maps, apps de espelhamento) e o que isso permite. Ver USB lista o que a porta enxerga com o celular ligado no cabo.", Theme.LABEL, Theme.MUTED))
+        usb.addView(row(activity.bigButton("Ver diagnóstico da central") { onShowDevice() }, activity.bigButton("Ver USB") { onShowUsb() }))
 
         val sys = card("Sistema")
         val on = Prefs.autostart(activity)

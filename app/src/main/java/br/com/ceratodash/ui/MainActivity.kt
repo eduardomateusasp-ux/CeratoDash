@@ -221,7 +221,8 @@ class MainActivity : AppCompatActivity() {
             { searchAdapter() },
             { search.openManual() },
             { LogDialog.show(this) },
-            { UsbDialog.show(this) }
+            { UsbDialog.show(this) },
+            { DeviceDialog.show(this) }
         )
         screens.add(dash)
         screens.add(telemetry)
