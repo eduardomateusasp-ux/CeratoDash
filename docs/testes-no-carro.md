@@ -163,6 +163,7 @@ Depende do que apareceu em A1 e A2. Leia `docs/espelhamento.md`. Faça só o que
 
 | Opção | Só vale se (de A1 e A2) | Resultado | Anotações |
 |---|---|---|---|
+| D0. Organic Maps na central (mapa offline), APK do F-Droid por pendrive; baixar o seu estado com internet uma vez; depois testar sem internet e fazer uma rota | GPS sim | | |
 | D1. Maps ou Waze direto na central, com internet do ponto de acesso do iPhone | Wi-Fi sim, Play Store sim ou APK, e de preferência GPS sim | | |
 | D2. Receptor AirPlay na central (espelhar a tela do iPhone) | Wi-Fi sim | | |
 | D3. Adaptador de CarPlay (só pesquisar, não comprar ainda) | USB anfitrião sim | | |

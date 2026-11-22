@@ -34,6 +34,9 @@
     <queries>
         <package android:name="com.google.android.apps.maps" />
         <package android:name="com.waze" />
+        <package android:name="app.organicmaps" />
+        <package android:name="net.osmand" />
+        <package android:name="net.osmand.plus" />
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>

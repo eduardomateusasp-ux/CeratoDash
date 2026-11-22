@@ -2,6 +2,11 @@
 
 Pedido do PRD: avaliar antes e dizer se cabe na memória da central. Esta avaliação é por escrito. Nada foi implementado nem medido na central.
 
+## Atualização (22/11/2026): o objetivo mudou
+O que o dono quer é **usar mapas na central, offline, sem depender de Waze nem de Google Maps** (a central não tem CarPlay e o celular é iPhone). A conclusão abaixo continua valendo para *construir* um mapa dentro do CeratoDash, mas a resposta ao objetivo é outra: **instalar um app de navegação offline que já existe**, como o Organic Maps (veja `docs/espelhamento.md`).
+
+Por que não construir a navegação no CeratoDash: um sistema de navegação é um produto inteiro. Além de desenhar o mapa, precisaria de busca de endereços, cálculo de rota offline, recálculo ao sair da rota, voz de orientação e dados de trânsito ou de limite de velocidade. Isso é muito maior que o resto do app, e os apps existentes já fazem melhor, com anos de uso. O que o CeratoDash faz é conviver com eles: atalhos na tela Mapas e a faixa de rotação, velocidade e água sobre o app de mapa.
+
 ## Conclusão
 **Não recomendo embutir o mapa agora.** Ele traria só um mapa, sem rota, e o Google Maps offline já resolve a navegação. O custo (peso do app, memória, tiles) é alto para um ganho pequeno.
 

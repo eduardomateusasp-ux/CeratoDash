@@ -229,7 +229,7 @@ class MainActivity : AppCompatActivity() {
         screens.add(coachScreen)
         screens.add(DiagnosticScreen(this))
         screens.add(trips)
-        screens.add(MapsScreen(this) { pkg, nome -> openApp(pkg, nome) })
+        screens.add(MapsScreen(this) { pkgs, nome -> openApp(pkgs, nome) })
         screens.add(settings)
         for (s in screens) frame.addView(s, FrameLayout.LayoutParams(match, match))
         frame.addView(
@@ -398,8 +398,9 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun openApp(pkg: String, nome: String) {
-        val intent = packageManager.getLaunchIntentForPackage(pkg)
+    /** Abre o primeiro pacote instalado da lista (um app pode ter versões com nomes de pacote diferentes). */
+    private fun openApp(pkgs: List<String>, nome: String) {
+        val intent = pkgs.firstNotNullOfOrNull { packageManager.getLaunchIntentForPackage(it) }
         if (intent == null) toast("$nome não está instalado nesta central.") else startActivity(intent)
     }
 

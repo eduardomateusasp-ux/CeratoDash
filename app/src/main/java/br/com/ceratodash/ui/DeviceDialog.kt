@@ -24,6 +24,8 @@ object DeviceDialog {
     private val known = listOf(
         "Google Maps" to "com.google.android.apps.maps",
         "Waze" to "com.waze",
+        "Organic Maps" to "app.organicmaps",
+        "OsmAnd" to "net.osmand",
         "Play Store" to "com.android.vending",
         "Serviços do Google" to "com.google.android.gms",
         "Android Auto" to "com.google.android.projection.gearhead"

@@ -1,6 +1,6 @@
 # CeratoDash: requisitos do produto (PRD)
 
-Versão do app: 0.9.0. Atualizado em 22/11/2026.
+Versão do app: 0.9.1. Atualizado em 22/11/2026.
 
 **Regra de leitura:** "Feito" quer dizer implementado e, quando possível, coberto por testes automáticos com um ELM327 simulado. **Só um teste no carro foi feito (relato do dono, sem detalhes):** o app conectou por Bluetooth clássico, respondeu bem, ficou leve, sem travar, e mostrou informações corretas. Todo o resto que depende do carro ou da central está marcado como não testado.
 
@@ -57,7 +57,7 @@ Painel de telemetria OBDII, esportivo e interativo, para a central multimídia A
 ### 2.5 Mapas e GPS
 | Requisito | Estado | Observação |
 |---|---|---|
-| Atalhos; aviso se o app de mapas não estiver instalado | Feito | |
+| Atalhos (Organic Maps, OsmAnd, Google Maps, Waze); aviso se o app não estiver instalado | Feito | Organic Maps e OsmAnd navegam offline, mas precisam de GPS na central. Não testado |
 | Google Maps offline com áreas baixadas; Waze precisa de internet | Informado na tela de Mapas | |
 | Mapa embutido com OpenStreetMap offline (MapLibre) | Avaliado, não implementado | Ver `docs/avaliacao-mapa-offline.md`: não recomendado agora |
 

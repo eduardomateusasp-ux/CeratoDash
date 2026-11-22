@@ -64,7 +64,7 @@ Em Ajustes, Mapas: ligue a faixa para ver rotação, velocidade e água sobre o 
 Em Ajustes, **Ver diagnóstico da central** mostra de uma vez o Android, a memória, o Wi-Fi, o GPS, o Bluetooth LE, o USB, a Play Store, o Maps, o Waze e apps de espelhamento instalados, e o que isso permite. **Ver USB** lista o que a porta enxerga com o celular no cabo. **Ver registro da conexão** mostra cada etapa da conexão com o adaptador, para diagnosticar falhas. Nada disso sai do aparelho.
 
 ## Maps e espelhamento com iPhone
-A central não tem CarPlay e o celular é iPhone. O app não tem espelhamento próprio. Veja `docs/espelhamento.md` para os caminhos possíveis (Maps ou Waze na central, receptor AirPlay, adaptador de CarPlay) e como escolher.
+A central não tem CarPlay e o celular é iPhone. O app não tem espelhamento próprio. O caminho recomendado é instalar na central um app de navegação offline, como o Organic Maps (precisa de GPS na central), e usar o CeratoDash ao lado dele. Veja `docs/espelhamento.md` para esse caminho e para as alternativas (Maps ou Waze na central, receptor AirPlay, adaptador de CarPlay). A tela Mapas tem atalhos para Organic Maps, OsmAnd, Google Maps e Waze.
 
 ## Limitações conhecidas
 - **Só a conexão clássica foi testada no carro.** Reconexão, BLE, voz, faixa sobre o mapa, viagens, condução, USB, espelhamento e uso de uma hora ainda são incógnitas.
